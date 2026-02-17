@@ -34,7 +34,7 @@ export const ScaneraPromo: React.FC = () => {
                     timing={linearTiming({ durationInFrames: 20 })}
                 />
 
-                <TransitionSeries.Sequence durationInFrames={220}>
+                <TransitionSeries.Sequence durationInFrames={300}>
                     <Problem />
                 </TransitionSeries.Sequence>
 
@@ -52,7 +52,7 @@ export const ScaneraPromo: React.FC = () => {
                     timing={linearTiming({ durationInFrames: 20 })}
                 />
 
-                <TransitionSeries.Sequence durationInFrames={300}>
+                <TransitionSeries.Sequence durationInFrames={350}>
                     <Solution />
                 </TransitionSeries.Sequence>
 

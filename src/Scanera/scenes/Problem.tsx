@@ -4,19 +4,17 @@ const ProblemIntro: React.FC = () => {
     const frame = useCurrentFrame();
 
     const opacity = interpolate(frame, [0, 20, 80, 100], [0, 1, 1, 0]);
-    // const translateY = interpolate(frame, [0, 100], [20, 0]); // Removed to prevent jitter
 
     return (
         <AbsoluteFill className="flex flex-col items-center justify-center bg-[#030303] z-30" style={{ opacity }}>
             <div className="text-center px-12 w-full max-w-5xl">
                 <h2 className="text-7xl font-bold text-white mb-8 tracking-tight leading-none text-red-500">
-                    ENTRADA DE DATOS MANUAL
+                    GESTIÓN MANUAL DE DOCUMENTOS
                 </h2>
                 <h3 className="text-4xl font-mono text-slate-400 mb-12 tracking-widest uppercase">
-                    LENTO • COSTOSO • ERROR
+                    CAOS • ERRORES • LENTITUD
                 </h3>
 
-                {/* The instruction implies replacing the previous span group with this new text */}
                 <p className="text-4xl text-white font-light tracking-[0.2em] border-t-2 border-slate-800 pt-10 inline-block">
                     TIEMPO PERDIDO
                 </p>
@@ -51,6 +49,33 @@ const Clock: React.FC<{ frame: number }> = ({ frame }) => {
                 style={{ transform: `rotate(${rotation}deg)` }}
                 className="absolute w-0.5 h-8 bg-[#00F0FF] origin-bottom bottom-1/2"
             />
+        </div>
+    );
+};
+
+const ChaosWord: React.FC<{ text: string; x: number; y: number; delay: number }> = ({ text, x, y, delay }) => {
+    const frame = useCurrentFrame();
+
+    // Deterministic jitter
+    const jitterX = Math.sin(frame * 0.5 + delay) * 10;
+    const jitterY = Math.cos(frame * 0.3 + delay) * 10;
+
+    // Glitch effect logic
+    const glitchTrigger = (frame + delay) % 30; // Faster glitch
+    const isGlitch = glitchTrigger > 25;
+
+    return (
+        <div
+            style={{
+                left: `${x}%`,
+                top: `${y}%`,
+                transform: `translate(${jitterX}px, ${jitterY}px) skew(${isGlitch ? 20 : 0}deg) scale(${isGlitch ? 1.1 : 1})`,
+                opacity: 1,
+                filter: isGlitch ? 'contrast(1.5)' : 'none'
+            }}
+            className="absolute font-black font-mono text-white text-4xl tracking-widest border-4 border-white bg-red-600 px-6 py-4 shadow-[10px_10px_0px_rgba(0,0,0,1)] z-20 uppercase rotate-[-2deg]"
+        >
+            {text}
         </div>
     );
 };
@@ -96,14 +121,22 @@ export const Problem: React.FC = () => {
                     <AbsoluteFill style={{ background: 'radial-gradient(circle, transparent 20%, #030303 90%)' }} />
                 </AbsoluteFill>
 
+                {/* Chaos Words Overlay */}
+                <AbsoluteFill>
+                    {/* Floating words appearing over time */}
+                    {actionFrame > 10 && <ChaosWord text="FACTURAS" x={20} y={30} delay={0} />}
+                    {actionFrame > 20 && <ChaosWord text="TICKETS" x={70} y={25} delay={15} />}
+                    {actionFrame > 35 && <ChaosWord text="RECIBOS" x={15} y={60} delay={30} />}
+                    {actionFrame > 50 && <ChaosWord text="ALBARANES" x={75} y={70} delay={45} />}
+                    {actionFrame > 65 && <ChaosWord text="PAPELES" x={40} y={20} delay={60} />}
+                    {actionFrame > 80 && <ChaosWord text="ERRORES" x={50} y={80} delay={75} />}
+                </AbsoluteFill>
+
                 <div className="flex flex-col items-center gap-12 z-10 relative mt-12">
                     <div className="flex items-end gap-32">
                         {/* The Operator Context */}
                         <div className="relative">
-                            {/* Exhaustion effect - now floating over image */}
-                            <div style={{ opacity: actionFrame > 90 ? 1 : 0 }} className="absolute -top-20 left-1/2 -translate-x-1/2 text-red-500 text-3xl font-mono font-bold animate-bounce bg-black/60 px-6 py-3 rounded-lg border border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.4)] whitespace-nowrap">
-                                FATIGA DETECTADA
-                            </div>
+                            {/* Removed Fatiga Detectada as requested */}
                         </div>
 
                         {/* Time Passing */}

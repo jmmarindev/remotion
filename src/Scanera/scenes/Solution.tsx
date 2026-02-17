@@ -4,28 +4,17 @@ const IntroText: React.FC = () => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
 
-    const opacity = interpolate(frame, [0, 20, 80, 100], [0, 1, 1, 0]);
-    // const translateY = interpolate(frame, [0, 100], [20, 0]); // Removed to prevent jitter
+    const opacity = interpolate(frame, [0, 20, 60, 80], [0, 1, 1, 0]);
 
     return (
         <AbsoluteFill className="flex flex-col items-center justify-center bg-[#030303] z-20" style={{ opacity }}>
             <div className="text-center px-12 w-full max-w-5xl">
-                <h2 className="text-7xl font-bold text-white mb-8 tracking-tight leading-none">
-                    AUTOMATIZA TODO EL PROCESO
+                <h2 className="text-7xl font-bold text-white mb-8 tracking-tight leading-none text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
+                    DIGITALIZACIÓN AUTOMÁTICA
                 </h2>
-                <h3 className="text-4xl font-mono text-[#00F0FF] mb-12 tracking-widest uppercase">
-                    DIGITALIZACIÓN DE DATOS
+                <h3 className="text-5xl font-mono text-[#00F0FF] tracking-[0.5em] uppercase drop-shadow-[0_0_15px_rgba(0,240,255,0.5)]">
+                    PRECISIÓN ABSOLUTA
                 </h3>
-
-                <div className="flex gap-8 justify-center text-slate-400 font-mono text-xl mb-16">
-                    <span className="border-2 border-slate-700 px-6 py-3 rounded-lg">IMÁGENES</span>
-                    <span className="border-2 border-slate-700 px-6 py-3 rounded-lg">PDF</span>
-                    <span className="border-2 border-slate-700 px-6 py-3 rounded-lg">PAPEL</span>
-                </div>
-
-                <p className="text-4xl text-white font-light tracking-[0.2em] border-t-2 border-slate-800 pt-10 inline-block">
-                    ECONÓMICO Y RÁPIDO
-                </p>
             </div>
 
             {/* Background Grid for Text */}
@@ -44,7 +33,7 @@ const IntroText: React.FC = () => {
 export const Solution: React.FC = () => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
-    const transitionFrame = 150;
+    const transitionFrame = 90;
 
     // Adjusted frame for the scanner part
     const scannerFrame = Math.max(0, frame - transitionFrame);
