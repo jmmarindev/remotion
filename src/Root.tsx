@@ -3,6 +3,7 @@ import { Composition } from "remotion";
 import { HelloWorld, myCompSchema } from "./HelloWorld";
 import { Logo, myCompSchema2 } from "./HelloWorld/Logo";
 import { ScaneraPromo } from "./Scanera";
+import { SmilebabyVideo } from "./smilebaby/SmilebabyVideo";
 
 // Each <Composition> is an entry in the sidebar!
 
@@ -50,6 +51,14 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1920}
         height={1080}
+      />
+      <Composition
+        id="SmilebabyVideo"
+        component={SmilebabyVideo}
+        durationInFrames={715} // 90 (Intro) + 150 (Problem) + 315 (Solution) + 210 (Outro) = 765
+        fps={30}
+        width={1080}
+        height={1920}
       />
     </>
   );
