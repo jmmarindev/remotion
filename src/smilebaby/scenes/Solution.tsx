@@ -11,18 +11,18 @@ export const Solution: React.FC = () => {
 
     // Timing strategy:
     // Each step lasts 75 frames (2.5 seconds at 30fps)
-    // 0-15: Intro
-    // 15-90: Step 1
-    // 90-165: Step 2
-    // 165-240: Step 3
-    // 240-315: Step 4
+    // 0-105: Intro text: "Pero SmileBaby... lo simplifica." (3.5 seconds)
+    // 105-180: Step 1
+    // 180-255: Step 2
+    // 255-330: Step 3
+    // 330-405: Step 4
     const stepDuration = 75;
 
     const steps = [
-        { text: "Crea tu lista de deseos", num: "1", startFrame: 15, transform: "rotate(-1deg)", image: "assets/smilebaby/solution/captura1.png" },
-        { text: "Agrega productos favoritos", num: "2", startFrame: 15 + stepDuration, transform: "rotate(2deg)", image: "assets/smilebaby/solution/silletacoche.jpeg" },
-        { text: "Comparte con la familia", num: "3", startFrame: 15 + stepDuration * 2, transform: "rotate(-1.5deg)", image: "assets/smilebaby/solution/share-list.png" },
-        { text: "Reservan en tiempo real", num: "4", startFrame: 15 + stepDuration * 3, transform: "rotate(1deg)", image: "assets/smilebaby/solution/list.png" }
+        { text: "Crea tu lista de deseos", num: "1", startFrame: 105, transform: "rotate(-1deg)", image: "assets/smilebaby/solution/captura1.png" },
+        { text: "Agrega productos favoritos", num: "2", startFrame: 105 + stepDuration, transform: "rotate(2deg)", image: "assets/smilebaby/solution/silletacoche.jpeg" },
+        { text: "Comparte con la familia", num: "3", startFrame: 105 + stepDuration * 2, transform: "rotate(-1.5deg)", image: "assets/smilebaby/solution/share-list.png" },
+        { text: "Reservan en tiempo real", num: "4", startFrame: 105 + stepDuration * 3, transform: "rotate(1deg)", image: "assets/smilebaby/solution/list.png" }
     ];
 
     const floatY = Math.sin(frame / 18) * 15;

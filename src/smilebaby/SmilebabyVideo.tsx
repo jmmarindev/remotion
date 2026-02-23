@@ -12,13 +12,13 @@ export const SmilebabyVideo: React.FC = () => {
     return (
         <AbsoluteFill className="bg-[#FFFFFF]">
             <Series>
-                <Series.Sequence durationInFrames={90}>
+                <Series.Sequence durationInFrames={210}>
                     <Intro />
                 </Series.Sequence>
-                <Series.Sequence durationInFrames={150}>
+                <Series.Sequence durationInFrames={390}>
                     <Problem />
                 </Series.Sequence>
-                <Series.Sequence durationInFrames={315}>
+                <Series.Sequence durationInFrames={405}>
                     <Solution />
                 </Series.Sequence>
                 <Series.Sequence durationInFrames={210}>

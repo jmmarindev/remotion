@@ -11,10 +11,10 @@ export const Problem: React.FC = () => {
 
     // Floating chaotic positions representing overload
     const points = [
-        { text: "Regalos duplicados", delay: 20, top: "25vh", left: "5%", rotation: -6 },
-        { text: "Cosas innecesarias", delay: 40, top: "40vh", right: "5%", rotation: 8 },
-        { text: "Sobrecarga mental", delay: 60, top: "55vh", left: "12%", rotation: -4 },
-        { text: "Regalos de múltiples tiendas", delay: 80, top: "75vh", right: "8%", rotation: 5 }
+        { text: "Regalos duplicados", delay: 90, top: "25vh", left: "5%", rotation: -6 },
+        { text: "Cosas innecesarias", delay: 180, top: "40vh", right: "5%", rotation: 8 },
+        { text: "Sobrecarga mental", delay: 270, top: "55vh", left: "12%", rotation: -4 },
+        { text: "Regalos de múltiples tiendas", delay: 350, top: "75vh", right: "8%", rotation: 5 }
     ];
 
     const illustrationScale = spring({
@@ -88,7 +88,7 @@ export const Problem: React.FC = () => {
                                         className="bg-[rgba(255,255,255,0.95)] backdrop-blur-3xl rounded-[32px] p-10 shadow-[0_30px_60px_rgba(30,54,85,0.3)] border-2 border-white flex items-center gap-6"
                                         style={{ pointerEvents: 'auto' }}
                                     >
-                                        <div className="w-8 h-8 rounded-full bg-[#E11D48] flex-shrink-0 animate-pulse" />
+                                        <div className="w-8 h-8 rounded-full bg-[#E11D48] flex-shrink-0" />
                                         <BodyText className="font-bold text-[2.8rem] m-0 text-[#1E3655] whitespace-nowrap">{point.text}</BodyText>
                                     </div>
                                 </div>

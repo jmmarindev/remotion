@@ -55,7 +55,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="SmilebabyVideo"
         component={SmilebabyVideo}
-        durationInFrames={715} // 90 (Intro) + 150 (Problem) + 315 (Solution) + 210 (Outro) = 765
+        durationInFrames={1215} // 210 (Intro) + 390 (Problem) + 405 (Solution) + 210 (Outro) = 1215
         fps={30}
         width={1080}
         height={1920}
