@@ -3,6 +3,7 @@ import { Intro } from "./scenes/Intro";
 import { Problem } from "./scenes/Problem";
 import { Solution } from "./scenes/Solution";
 import { Outro } from "./scenes/Outro";
+import { Download } from "./scenes/Download";
 
 // Video dimensions: 1080x1920
 // FPS: 30
@@ -23,6 +24,9 @@ export const SmilebabyVideo: React.FC = () => {
                 </Series.Sequence>
                 <Series.Sequence durationInFrames={210}>
                     <Outro />
+                </Series.Sequence>
+                <Series.Sequence durationInFrames={240}>
+                    <Download />
                 </Series.Sequence>
             </Series>
         </AbsoluteFill>
