@@ -4,6 +4,7 @@ import { HelloWorld, myCompSchema } from "./HelloWorld";
 import { Logo, myCompSchema2 } from "./HelloWorld/Logo";
 import { ScaneraPromo } from "./Scanera";
 import { SmilebabyVideo } from "./smilebaby/SmilebabyVideo";
+import { VibeCodingDebate } from "./Podcats-production/VibeCodingDebate";
 
 // Each <Composition> is an entry in the sidebar!
 
@@ -59,6 +60,14 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1080}
         height={1920}
+      />
+      <Composition
+        id="VibeCodingDebate"
+        component={VibeCodingDebate}
+        durationInFrames={10452} // 348.36 * 30
+        fps={30}
+        width={1920}
+        height={1080}
       />
     </>
   );
