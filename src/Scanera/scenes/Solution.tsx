@@ -34,6 +34,7 @@ const IntroText: React.FC = () => {
 const DOCUMENTS = [
     { type: "FACTURA", vendor: "Tech Corp SL", amount: "€1,250.00", confidence: "99.9%" },
     { type: "TICKET", vendor: "Restaurante Plaza", amount: "€45.50", confidence: "98.5%" },
+    { type: "RECIBO", vendor: "Librería Central", amount: "€14.20", confidence: "99.0%" },
     { type: "ALBARÁN", vendor: "Logística Express", amount: "REF-2024-88", confidence: "99.2%" },
 ];
 

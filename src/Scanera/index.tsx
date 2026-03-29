@@ -16,7 +16,7 @@ export const ScaneraPromo: React.FC = () => {
             <Audio src={staticFile("assets/scanera/music.mp3")} volume={0.30} />
 
             <TransitionSeries>
-                <TransitionSeries.Sequence durationInFrames={120}>
+                <TransitionSeries.Sequence durationInFrames={150}>
                     <Intro />
                 </TransitionSeries.Sequence>
 
@@ -52,7 +52,7 @@ export const ScaneraPromo: React.FC = () => {
                     timing={linearTiming({ durationInFrames: 20 })}
                 />
 
-                <TransitionSeries.Sequence durationInFrames={350}>
+                <TransitionSeries.Sequence durationInFrames={400}>
                     <Solution />
                 </TransitionSeries.Sequence>
 
@@ -69,7 +69,7 @@ export const ScaneraPromo: React.FC = () => {
                     timing={linearTiming({ durationInFrames: 20 })}
                 />
 
-                <TransitionSeries.Sequence durationInFrames={160}>
+                <TransitionSeries.Sequence durationInFrames={130}>
                     <IntegrationsLogos />
                 </TransitionSeries.Sequence>
 
@@ -87,7 +87,7 @@ export const ScaneraPromo: React.FC = () => {
                     timing={linearTiming({ durationInFrames: 20 })}
                 />
 
-                <TransitionSeries.Sequence durationInFrames={300}>
+                <TransitionSeries.Sequence durationInFrames={950}>
                     <Outro />
                 </TransitionSeries.Sequence>
             </TransitionSeries>
