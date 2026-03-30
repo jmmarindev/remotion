@@ -1,39 +1,48 @@
 import React from "react";
-import { AbsoluteFill, Img, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { TimelineSegment } from "./data";
+import {
+  AbsoluteFill,
+  Img,
+  interpolate,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+import { currentPodcastEpisode } from "./currentEpisode";
+import type { TimelineSegment } from "./episode-schema";
 
 export const Segment: React.FC<{
   segmentProps: TimelineSegment;
 }> = ({ segmentProps }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const assetFile = segmentProps.visual_strategy?.asset_file;
 
   // Try to require the image statically if possible, otherwise rely on dynamic require
   // Webpack will bundle the whole assets directory because of this signature
   let imageSrc;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    imageSrc = require(`./assets/${segmentProps.visual_strategy.asset_file}`);
+    if (!assetFile) {
+      imageSrc = null;
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      imageSrc = require(`./${currentPodcastEpisode.slug}/assets/${assetFile}`);
+    }
   } catch (err) {
     // If not found, ignore to allow fallback
     imageSrc = null;
   }
 
   // Fade in animation
-  const opacity = interpolate(
-    frame,
-    [0, 15],
-    [0, 1],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-  );
+  const opacity = interpolate(frame, [0, 15], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   // Subtle scale
-  const scale = interpolate(
-    frame,
-    [0, 300],
-    [1.05, 1],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-  );
+  const scale = interpolate(frame, [0, 300], [1.05, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   // Spring headline
   const headlineY = spring({
@@ -41,13 +50,11 @@ export const Segment: React.FC<{
     fps,
     config: { damping: 12, mass: 0.5 },
   });
-  
-  const headlineOpacity = interpolate(
-    frame,
-    [10, 25],
-    [0, 1],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-  );
+
+  const headlineOpacity = interpolate(frame, [10, 25], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#1a1a1a", opacity }}>
@@ -60,19 +67,27 @@ export const Segment: React.FC<{
             height: "100%",
             objectFit: "cover",
             transform: `scale(${scale})`,
-            filter: "brightness(0.6)"
+            filter: "brightness(0.6)",
           }}
         />
       ) : (
-        <AbsoluteFill style={{ 
-          background: "linear-gradient(135deg, #2b5876 0%, #4e4376 100%)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center"
-        }}>
+        <AbsoluteFill
+          style={{
+            background: "linear-gradient(135deg, #2b5876 0%, #4e4376 100%)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
           {/* Fallback gradient if image requires fail */}
-          <div style={{ color: "rgba(255,255,255,0.1)", fontSize: "40px", fontWeight: "bold" }}>
-            {segmentProps.visual_strategy.asset_file}
+          <div
+            style={{
+              color: "rgba(255,255,255,0.1)",
+              fontSize: "40px",
+              fontWeight: "bold",
+            }}
+          >
+            {assetFile ?? segmentProps.overlay_ui.headline}
           </div>
         </AbsoluteFill>
       )}
@@ -91,7 +106,7 @@ export const Segment: React.FC<{
               transform: `translateY(${100 - headlineY * 100}px)`,
               opacity: headlineOpacity,
               margin: "0 100px",
-              lineHeight: 1.1
+              lineHeight: 1.1,
             }}
           >
             {segmentProps.overlay_ui.headline}
@@ -101,25 +116,28 @@ export const Segment: React.FC<{
 
       {/* Speaker Subtitle / Text content */}
       <AbsoluteFill style={{ justifyContent: "flex-end", padding: "80px" }}>
-         <div style={{
-           backgroundColor: "rgba(0,0,0,0.6)",
-           backdropFilter: "blur(10px)",
-           borderRadius: "20px",
-           padding: "40px",
-           borderLeft: `10px solid ${segmentProps.speaker_id === 0 ? "#4facfe" : "#f093fb"}`
-         }}>
-           <p style={{
-             fontFamily: "Inter, sans-serif",
-             fontSize: "40px",
-             color: "white",
-             lineHeight: 1.5,
-             margin: 0
-           }}>
-             {segmentProps.text_content}
-           </p>
-         </div>
+        <div
+          style={{
+            backgroundColor: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(10px)",
+            borderRadius: "20px",
+            padding: "40px",
+            borderLeft: `10px solid ${segmentProps.speaker_id === 0 ? "#4facfe" : "#f093fb"}`,
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: "40px",
+              color: "white",
+              lineHeight: 1.5,
+              margin: 0,
+            }}
+          >
+            {segmentProps.text_content}
+          </p>
+        </div>
       </AbsoluteFill>
-
     </AbsoluteFill>
   );
 };

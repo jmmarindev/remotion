@@ -5,13 +5,26 @@ import { Logo, myCompSchema2 } from "./HelloWorld/Logo";
 import { ScaneraPromo } from "./Scanera";
 import { SmilebabyVideo } from "./smilebaby/SmilebabyVideo";
 import { VibeCodingDebate } from "./Podcats-production/VibeCodingDebate";
-import { debateData, timeToSeconds } from "./Podcats-production/data";
+import {
+  getEpisodeDurationInFrames,
+  timeToSeconds,
+} from "./Podcats-production/episode-schema";
+import { currentPodcastEpisode } from "./Podcats-production/currentEpisode";
 
 const fps = 30;
-const linkedinStartSeconds = timeToSeconds(debateData.metadata.distribution_targets.linkedin_start);
-const linkedinEndSeconds = timeToSeconds(debateData.metadata.distribution_targets.linkedin_end);
-const tiktokStartSeconds = timeToSeconds(debateData.metadata.distribution_targets.tiktok_start);
-const tiktokEndSeconds = timeToSeconds(debateData.metadata.distribution_targets.tiktok_end);
+const debateData = currentPodcastEpisode.data;
+const linkedinStartSeconds = timeToSeconds(
+  debateData.metadata.distribution_targets.linkedin_start,
+);
+const linkedinEndSeconds = timeToSeconds(
+  debateData.metadata.distribution_targets.linkedin_end,
+);
+const tiktokStartSeconds = timeToSeconds(
+  debateData.metadata.distribution_targets.tiktok_start,
+);
+const tiktokEndSeconds = timeToSeconds(
+  debateData.metadata.distribution_targets.tiktok_end,
+);
 
 const HOOK_DURATION_FPS = fps * 3; // 3 second intro hook
 
@@ -70,45 +83,51 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
       />
-      
+
       {/* --- Podcast Video Creator Productions --- */}
-      
+
       {/* 1. YouTube: Episodio Completo (16:9) */}
       <Composition
         id="FullEpisode"
         component={VibeCodingDebate}
-        durationInFrames={10452} // 348.36 * 30 -> Could be derived, but keeping as is
+        durationInFrames={getEpisodeDurationInFrames(debateData, fps)}
         fps={fps}
         width={1920}
         height={1080}
         defaultProps={{ type: "full" as const, startFrame: 0 }}
       />
-      
+
       {/* 2. LinkedIn: The Insight (Nativo 16:9, ~120s) */}
       <Composition
         id="LinkedInInsight"
         component={VibeCodingDebate}
-        durationInFrames={Math.round((linkedinEndSeconds - linkedinStartSeconds) * fps) + HOOK_DURATION_FPS}
+        durationInFrames={
+          Math.round((linkedinEndSeconds - linkedinStartSeconds) * fps) +
+          HOOK_DURATION_FPS
+        }
         fps={fps}
         width={1920}
         height={1080}
-        defaultProps={{ 
-          type: "insight" as const, 
-          startFrame: Math.round(linkedinStartSeconds * fps) 
+        defaultProps={{
+          type: "insight" as const,
+          startFrame: Math.round(linkedinStartSeconds * fps),
         }}
       />
-      
+
       {/* 3. TikTok/Reels: Atomic (Vertical 9:16, ~60s) */}
       <Composition
         id="TikTokViral"
         component={VibeCodingDebate}
-        durationInFrames={Math.round((tiktokEndSeconds - tiktokStartSeconds) * fps) + HOOK_DURATION_FPS}
+        durationInFrames={
+          Math.round((tiktokEndSeconds - tiktokStartSeconds) * fps) +
+          HOOK_DURATION_FPS
+        }
         fps={fps}
         width={1080}
         height={1920}
-        defaultProps={{ 
-          type: "atomic" as const, 
-          startFrame: Math.round(tiktokStartSeconds * fps) 
+        defaultProps={{
+          type: "atomic" as const,
+          startFrame: Math.round(tiktokStartSeconds * fps),
         }}
       />
     </>

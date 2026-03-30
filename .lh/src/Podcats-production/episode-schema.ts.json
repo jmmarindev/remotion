@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/Podcats-production/episode-schema.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1774908998362,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1774908998362,
+            "name": "Commit-0",
+            "content": "export interface TimelineSegment {\n  start_time: string;\n  end_time: string;\n  speaker_id: number;\n  text_content: string;\n  visual_strategy?: {\n    asset_type: string;\n    freepik_api_params: {\n      query: string;\n      content_type: string;\n    };\n    composition_note: string;\n    asset_file: string;\n  };\n  overlay_ui: {\n    headline: string;\n  };\n}\n\nexport interface DistributionTargets {\n  linkedin_start: string;\n  linkedin_end: string;\n  linkedin_hook: string;\n  tiktok_start: string;\n  tiktok_end: string;\n  tiktok_hook: string;\n  short_outro_cta: string;\n  short_outro_duration_seconds: number;\n}\n\nexport interface PodcastEpisodeMetadata {\n  episode_slug: string;\n  episode_title: string;\n  audio_file: string;\n  vibe_theme: string;\n  channel_name?: string;\n  channel_tagline?: string;\n  editorial_pillar?: string;\n  distribution_targets: DistributionTargets;\n}\n\nexport interface PodcastDebateData {\n  metadata: PodcastEpisodeMetadata;\n  timeline: TimelineSegment[];\n}\n\nexport interface PreparedTimelineSegment extends TimelineSegment {\n  startFrame: number;\n  endFrame: number;\n  durationFrames: number;\n}\n\nexport function timeToSeconds(timeStr: string): number {\n  const [hms, ms] = timeStr.split(\",\");\n  const [h, m, s] = hms.split(\":\").map(Number);\n  return h * 3600 + m * 60 + s + parseInt(ms || \"0\", 10) / 1000;\n}\n\nexport function prepareSegments(\n  debateData: PodcastDebateData,\n  fps: number = 30,\n): PreparedTimelineSegment[] {\n  return debateData.timeline.map((segment) => {\n    const startSecs = timeToSeconds(segment.start_time);\n    const endSecs = timeToSeconds(segment.end_time);\n\n    const startFrame = Math.round(startSecs * fps);\n    const endFrame = Math.round(endSecs * fps);\n    const durationFrames = endFrame - startFrame;\n\n    return {\n      ...segment,\n      startFrame,\n      endFrame,\n      durationFrames,\n    };\n  });\n}\n\nexport function getEpisodeDurationInFrames(\n  debateData: PodcastDebateData,\n  fps: number = 30,\n): number {\n  const lastSegment = debateData.timeline.at(-1);\n  if (!lastSegment) {\n    return 0;\n  }\n\n  return Math.round(timeToSeconds(lastSegment.end_time) * fps);\n}"
+        }
+    ]
+}

@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { TimelineSegment } from "./data";
+import type { TimelineSegment } from "./episode-schema";
 import { AnimatedBackground } from "./AnimatedBackground";
 import { Avatar } from "./Avatar";
 import { Headline } from "./Headline";
@@ -18,13 +18,30 @@ export const DebateSegment: React.FC<{
   const renderAvatars = () => {
     if (type === "atomic") {
       // TikTok/Vertical: only show the active speaker, centered and larger
-      return <Avatar speakerId={speakerId} isActive={true} side="center" type={type} />;
+      return (
+        <Avatar
+          speakerId={speakerId}
+          isActive={true}
+          side="center"
+          type={type}
+        />
+      );
     }
     // YouTube / LinkedIn: show both on left/right
     return (
       <>
-        <Avatar speakerId={0} isActive={speakerId === 0} side="left" type={type} />
-        <Avatar speakerId={1} isActive={speakerId === 1} side="right" type={type} />
+        <Avatar
+          speakerId={0}
+          isActive={speakerId === 0}
+          side="left"
+          type={type}
+        />
+        <Avatar
+          speakerId={1}
+          isActive={speakerId === 1}
+          side="right"
+          type={type}
+        />
       </>
     );
   };

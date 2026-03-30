@@ -5,14 +5,24 @@
  * Usage:
  *   npx tsx --env-file=env.local scripts/auto-download-assets.ts
  *   npx tsx --env-file=env.local scripts/auto-download-assets.ts --dry-run   # preview only
+ *
+ * Switch the active episode in src/Podcats-production/currentEpisode.ts
+ * before running this script for a different topic.
  */
-import { FreepikService } from '../src/services/freepik';
-import { debateData } from '../src/Podcats-production/data';
-import { existsSync } from 'fs';
-import { join } from 'path';
+import { FreepikService } from "../src/services/freepik";
+import { currentPodcastEpisode } from "../src/Podcats-production/currentEpisode";
+import { existsSync } from "fs";
+import { join } from "path";
 
-const ASSETS_DIR = join(process.cwd(), 'src', 'Podcats-production', 'assets');
-const DRY_RUN = process.argv.includes('--dry-run');
+const debateData = currentPodcastEpisode.data;
+const ASSETS_DIR = join(
+  process.cwd(),
+  "src",
+  "Podcats-production",
+  currentPodcastEpisode.slug,
+  "assets",
+);
+const DRY_RUN = process.argv.includes("--dry-run");
 
 interface AssetPlan {
   assetFile: string;
@@ -32,6 +42,8 @@ function buildAssetPlan(): AssetPlan[] {
   const plan: AssetPlan[] = [];
 
   for (const seg of debateData.timeline) {
+    if (!seg.visual_strategy) continue;
+
     const file = seg.visual_strategy.asset_file;
     if (seen.has(file)) continue;
     seen.add(file);
@@ -56,15 +68,12 @@ function buildAssetPlan(): AssetPlan[] {
  * - Prefer landscape orientation (video is 16:9)
  * - Higher download count = community-validated quality
  */
-function scoreCandidates(
-  candidates: any[],
-  plan: AssetPlan
-): any[] {
+function scoreCandidates(candidates: any[], plan: AssetPlan): any[] {
   const contextWords = new Set(
     `${plan.query} ${plan.headline} ${plan.textContext}`
       .toLowerCase()
       .split(/\W+/)
-      .filter((w) => w.length > 2)
+      .filter((w) => w.length > 2),
   );
 
   return candidates
@@ -72,19 +81,19 @@ function scoreCandidates(
       let score = 0;
 
       // 1. Keyword overlap in title
-      const titleWords = (item.title || '').toLowerCase().split(/\W+/);
+      const titleWords = (item.title || "").toLowerCase().split(/\W+/);
       for (const w of titleWords) {
         if (contextWords.has(w)) score += 3;
       }
 
       // 2. Content type match
-      const imgType = item.image?.type || '';
+      const imgType = item.image?.type || "";
       if (imgType === plan.contentType) score += 5;
 
       // 3. Landscape orientation bonus (our video is 16:9)
-      const orientation = item.image?.orientation || '';
-      if (orientation === 'horizontal') score += 4;
-      if (orientation === 'square') score += 1;
+      const orientation = item.image?.orientation || "";
+      if (orientation === "horizontal") score += 4;
+      if (orientation === "square") score += 1;
 
       // 4. Popularity bonus (community-validated)
       const downloads = item.stats?.downloads || 0;
@@ -93,7 +102,7 @@ function scoreCandidates(
       else if (downloads > 100) score += 1;
 
       // 5. Photo type general quality bonus
-      if (imgType === 'photo') score += 1;
+      if (imgType === "photo") score += 1;
 
       return { ...item, _score: score };
     })
@@ -101,7 +110,7 @@ function scoreCandidates(
 }
 
 async function main() {
-  console.log('🎬 Auto-Pick Inteligente — Freepik Asset Downloader\n');
+  console.log("🎬 Auto-Pick Inteligente — Freepik Asset Downloader\n");
 
   const service = new FreepikService();
   const plan = buildAssetPlan();
@@ -109,7 +118,7 @@ async function main() {
   console.log(`📋 ${plan.length} unique assets to download.\n`);
 
   if (DRY_RUN) {
-    console.log('🔍 DRY RUN — will search and score but NOT download.\n');
+    console.log("🔍 DRY RUN — will search and score but NOT download.\n");
   }
 
   let downloaded = 0;
@@ -122,10 +131,12 @@ async function main() {
 
     // Skip if already downloaded (not a placeholder)
     if (existsSync(targetPath)) {
-      const stats = require('fs').statSync(targetPath);
+      const stats = require("fs").statSync(targetPath);
       // Skip only if file is larger than 10KB (not a placeholder)
       if (stats.size > 10240) {
-        console.log(`⏭️  ${label} — already exists (${(stats.size / 1024).toFixed(0)} KB), skipping.`);
+        console.log(
+          `⏭️  ${label} — already exists (${(stats.size / 1024).toFixed(0)} KB), skipping.`,
+        );
         skipped++;
         continue;
       }
@@ -141,14 +152,16 @@ async function main() {
         query: asset.query,
         limit: 10,
         content_type: asset.contentType as any,
-        orientation: 'landscape',
+        orientation: "landscape",
       });
 
       const candidates = result.data || [];
 
       if (candidates.length === 0) {
         // Retry with broader search (no content_type filter)
-        console.log('   ⚠️  No results with filters, retrying broader search...');
+        console.log(
+          "   ⚠️  No results with filters, retrying broader search...",
+        );
         const broader = await service.search({
           query: asset.query,
           limit: 10,
@@ -157,7 +170,9 @@ async function main() {
       }
 
       if (candidates.length === 0) {
-        console.log(`   ❌ No free results found for "${asset.query}". Skipping.`);
+        console.log(
+          `   ❌ No free results found for "${asset.query}". Skipping.`,
+        );
         failed++;
         continue;
       }
@@ -166,11 +181,18 @@ async function main() {
       const ranked = scoreCandidates(candidates, asset);
       const winner = ranked[0];
 
-      console.log(`   🏆 Picked: [${winner.id}] "${winner.title}" (score: ${winner._score})`);
-      console.log(`   📊 ${winner.stats?.downloads || 0} downloads | ${winner.image?.orientation || '?'} | ${winner.image?.type || '?'}`);
+      console.log(
+        `   🏆 Picked: [${winner.id}] "${winner.title}" (score: ${winner._score})`,
+      );
+      console.log(
+        `   📊 ${winner.stats?.downloads || 0} downloads | ${winner.image?.orientation || "?"} | ${winner.image?.type || "?"}`,
+      );
 
       if (!DRY_RUN) {
-        const outputPath = await service.download(String(winner.id), asset.assetFile);
+        const outputPath = await service.download(
+          String(winner.id),
+          asset.assetFile,
+        );
         console.log(`   ✅ Saved: ${outputPath}`);
         downloaded++;
       } else {
@@ -180,16 +202,17 @@ async function main() {
 
       // Small delay to respect rate limits
       await new Promise((r) => setTimeout(r, 500));
-
     } catch (err: any) {
       console.error(`   ❌ Failed: ${err.message}`);
       failed++;
     }
   }
 
-  console.log('\n' + '='.repeat(50));
-  console.log(`🎬 Done! Downloaded: ${downloaded} | Skipped: ${skipped} | Failed: ${failed}`);
-  console.log('='.repeat(50));
+  console.log("\n" + "=".repeat(50));
+  console.log(
+    `🎬 Done! Downloaded: ${downloaded} | Skipped: ${skipped} | Failed: ${failed}`,
+  );
+  console.log("=".repeat(50));
 }
 
 main();

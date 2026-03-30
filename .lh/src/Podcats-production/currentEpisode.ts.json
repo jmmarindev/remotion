@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/Podcats-production/currentEpisode.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1774908998374,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1774908998374,
+            "name": "Commit-0",
+            "content": "import type { PodcastDebateData } from \"./episode-schema\";\nimport { debateData as vibeCodingEpisode } from \"./vibe-coding/assets/data\";\n\nconst EPISODES = {\n  \"vibe-coding\": vibeCodingEpisode,\n} satisfies Record<string, PodcastDebateData>;\n\nexport const ACTIVE_PODCAST_EPISODE_SLUG = \"vibe-coding\" as const;\n\nexport const currentPodcastEpisode = {\n  slug: ACTIVE_PODCAST_EPISODE_SLUG,\n  data: EPISODES[ACTIVE_PODCAST_EPISODE_SLUG],\n};"
+        }
+    ]
+}
