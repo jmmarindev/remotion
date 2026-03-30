@@ -90,7 +90,8 @@ export const CenterContent: React.FC<{
   speakerId: 0 | 1;
   durationFrames: number;
   segmentIndex: number;
-}> = ({ textContent, speakerId, durationFrames, segmentIndex }) => {
+  type?: "full" | "insight" | "atomic";
+}> = ({ textContent, speakerId, durationFrames, segmentIndex, type = "full" }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const accent = SPEAKER_ACCENTS[speakerId];
@@ -109,19 +110,22 @@ export const CenterContent: React.FC<{
     <div
       style={{
         position: "absolute",
-        top: "50%",
+        top: type === "atomic" ? "65%" : "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 36,
+        gap: type === "atomic" ? 24 : 36,
         opacity: exitOpacity,
         width: 900,
+        zIndex: 5,
       }}
     >
-      {/* Quote Card */}
-      <QuoteCard quote={quote} accent={accent} frame={frame} fps={fps} />
+      {/* Quote Card - smaller on atomic to leave room for avatar */}
+      <div style={{ transform: type === "atomic" ? "scale(0.85)" : "none" }}>
+        <QuoteCard quote={quote} accent={accent} frame={frame} fps={fps} />
+      </div>
 
       {/* Fun reaction tags floating around */}
       <div

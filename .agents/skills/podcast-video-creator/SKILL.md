@@ -46,7 +46,7 @@ Para **cada segmento**, genera manualmente (NO con copy-paste automático):
 
 | Campo | Descripción | Ejemplo |
 |---|---|---|
-| `headline` | Título corto y impactante (2-5 palabras) | "La Casa de Plástico" |
+| `headline` | Título corto y MUY impactante (máximo 2-4 palabras). **CRÍTICO:** mantenerlo extremadamente corto para que no solape con el avatar en clips verticales (TikTok). | "La Casa de Plástico" |
 | `key_quote` | Frase curada que aporta VALOR — el insight más potente del segmento. NO es la primera frase del texto. | "Por fuera impecable, por dentro un bloque de plástico imposible de iterar" |
 | `fun_tags` | 1-2 reacciones con emoji en español, con humor | ["🏠 Casa de Plástico", "🖨️ Impresión 3D"] |
 
@@ -63,33 +63,55 @@ Para **cada segmento**, genera manualmente (NO con copy-paste automático):
 - ✅ Incluir emoji relevante al inicio
 - ✅ Aportar humor, sarcasmo o dramatismo
 - ✅ 1-2 tags por segmento (segmentos cortos tipo "Mhm" → 1 solo tag)
+- ✅ Se muestran en **todos los formatos**: YouTube, LinkedIn y TikTok
 
-### Fase 3: Generar `data.ts`
+### Fase 3: Selección Multiplataforma (distribution_targets)
 
-Crea el archivo `src/Podcats-production/data.ts` con esta estructura exacta:
+El archivo `data.ts` que generarás debe contener un objeto `metadata` que marque los puntos de inicio para los clips cortos:
+
+1. **`linkedin_start` (El Insight Clip):**
+   - Busca el bloque de ~120 segundos que contenga la Key Quote más disruptiva, seria, o polémica.
+   - Idealmente un segmento donde el ponente 1 corrige o aporta rigor (mayor impacto profesional).
+   - Extrae su `start_time` original.
+
+2. **`tiktok_start` (El Atomic Clip):**
+   - Busca el bloque de ~60 segundos con mayor **densidad de Fun Tags**, sarcasmo, energía y cambios rápidos de turno.
+   - Extrae su `start_time` original.
+
+### Fase 4: Generar `data.ts`
+
+Crea el archivo `src/Podcats-production/data.ts` con esta nueva estructura exacta:
 
 ```typescript
-export interface TimelineSegment {
-  start_time: string;      // "00:01:35,440"
-  end_time: string;        // "00:01:50,900"
-  speaker_id: number;      // 0 o 1
-  text_content: string;    // Texto hablado completo
-  visual_strategy: {
-    asset_type: string;     // Siempre "generated" (no usamos stock)
-    freepik_api_params: {   // Se mantiene por compatibilidad pero se usa para query context
-      query: string;        // Descripción visual del concepto (para posible uso futuro)
-      content_type: string; // "photo" | "vector" | "illustration"
-    };
-    composition_note: string;
-    asset_file: string;     // Nombre de referencia (ej: "asset_01.jpg")
-  };
-  overlay_ui: {
-    headline: string;       // Título corto animado
-  };
-}
+export const metadata = {
+  distribution_targets: {
+    linkedin_start: "00:03:15,000", // Start time del Insight Clip (~120s)
+    tiktok_start: "00:01:20,500"    // Start time del Atomic Clip (~60s)
+  }
+};
+
+export const debateData = {
+  timeline: [
+    {
+      start_time: "00:01:35,440",
+      end_time: "00:01:50,900",
+      speaker_id: 0,
+      text_content: "Texto hablado completo",
+      visual_strategy: {
+        asset_type: "generated", 
+        freepik_api_params: { query: "...", content_type: "photo" },
+        composition_note: "...",
+        asset_file: "..."
+      },
+      overlay_ui: {
+        headline: "Título corto animado"
+      }
+    }
+  ]
+};
 ```
 
-### Fase 4: Actualizar los Datos del Centro
+### Fase 5: Actualizar los Datos del Centro
 
 En `src/Podcats-production/KeywordHighlight.tsx`, actualiza los dos arrays:
 
@@ -140,21 +162,33 @@ El vídeo se compone de estas capas visuales (de fondo a frente):
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  Layer 1: AnimatedBackground.tsx                         │
-│  → Gradient mesh con orbs flotantes, varía por segmento  │
+│  Layer 1: AnimatedBackground.tsx  ← CONTINUO, SIN CORTES│
+│  → Un único fondo que corre durante todo el vídeo.       │
+│  → Gradient oscuro base + 3 orbs flotantes (blur 80px)   │
+│  → hue-rotate(frame * 0.05deg) = cambio de color suave   │
+│  → NO recibe props de segmento ni de tipo de plataforma  │
+│  → Igual en YouTube, LinkedIn y TikTok                   │
 │                                                          │
-│  Layer 2: Avatar.tsx (×2 — izquierda y derecha)          │
-│  → Círculos con glow pulsante + barras de mic animadas   │
-│  → Azul (#4facfe) = Speaker 0, Rosa (#f093fb) = Speaker 1│
-│  → Avatar activo: glow + escala 1.05, inactivo: dim 0.35 │
+│  Layer 2: Avatar.tsx                                     │
+│  → YouTube/LinkedIn: Speaker 0 (izq) + Speaker 1 (dcha.│
+│    Azul (#4facfe), Rosa (#f093fb). Activo: glow+scale,  │
+│    inactivo: dim 0.35                                    │
+│  → TikTok/Atomic: SOLO el speaker activo, centrado al   │
+│    42% vertical. Scale 1.2 cuando activo.               │
 │                                                          │
 │  Layer 3: KeywordHighlight.tsx (CenterContent)           │
 │  → Quote Card con glassmorphism + comilla decorativa ❝   │
 │  → Fun Tags flotantes con bounce + rotación              │
+│  → Se muestran en TODOS los formatos (full/insight/atomic│
+│  → En atomic: Quote Card al 65% para dejar espacio       │
+│    al avatar central                                     │
 │                                                          │
 │  Layer 4: Headline.tsx (arriba-centro)                   │
 │  → 4 variantes de animación que rotan (slide-up,         │
 │    fade-scale, slide-left, typewriter)                    │
+│  → YouTube/LinkedIn: 72px. TikTok/Atomic: 110px         │
+│  → MÁXIMO 2-4 palabras para evitar solapamiento          │
+│    con el avatar en formato vertical TikTok              │
 │                                                          │
 │  Layer 5: Subtitle.tsx (abajo)                           │
 │  → Palabra por palabra, glassmorphism, borde del color   │
@@ -217,7 +251,7 @@ Usar `Math.round` (no `Math.floor`) y derivar `durationFrames` como `endFrame - 
 |---|---|---|
 | Speaker 0 | `#4facfe → #00f2fe` | Avatar, borde subtítulo, glow tags |
 | Speaker 1 | `#f093fb → #f5576c` | Avatar, borde subtítulo, glow tags |
-| Background | 4 palettes rotando por `segmentIndex % 4` | Gradients oscuros con orbs |
+| Background | Palette `#0f0c29 → #302b63 → #24243e` única y continua | Corre sin cortes durante todo el vídeo. `hue-rotate(frame * 0.05deg)` crea el cambio de color suave |
 | Texto | `rgba(255,255,255,0.92-0.94)` | Subtítulos, quotes |
 | Glassmorphism | `rgba(10,10,30,0.65)` + `blur(20px)` | Cards, subtítulos |
 

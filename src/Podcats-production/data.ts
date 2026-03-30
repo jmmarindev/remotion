@@ -21,6 +21,10 @@ export const debateData = {
   metadata: {
     episode_title: "Vibe Coding vs Rigor Técnico",
     vibe_theme: "tech-analytical / debate",
+    distribution_targets: {
+      linkedin_start: "00:01:35,440", // Fragmento serio: 0 * IA = 0
+      tiktok_start: "00:03:52,900"    // Fragmento energético/dinámico
+    }
   },
   timeline: [
     {

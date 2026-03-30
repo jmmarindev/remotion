@@ -5,6 +5,11 @@ import { Logo, myCompSchema2 } from "./HelloWorld/Logo";
 import { ScaneraPromo } from "./Scanera";
 import { SmilebabyVideo } from "./smilebaby/SmilebabyVideo";
 import { VibeCodingDebate } from "./Podcats-production/VibeCodingDebate";
+import { debateData, timeToSeconds } from "./Podcats-production/data";
+
+const fps = 30;
+const linkedinStartSeconds = timeToSeconds(debateData.metadata.distribution_targets.linkedin_start);
+const tiktokStartSeconds = timeToSeconds(debateData.metadata.distribution_targets.tiktok_start);
 
 // Each <Composition> is an entry in the sidebar!
 
@@ -61,13 +66,46 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
       />
+      
+      {/* --- Podcast Video Creator Productions --- */}
+      
+      {/* 1. YouTube: Episodio Completo (16:9) */}
       <Composition
-        id="VibeCodingDebate"
+        id="FullEpisode"
         component={VibeCodingDebate}
-        durationInFrames={10452} // 348.36 * 30
-        fps={30}
+        durationInFrames={10452} // 348.36 * 30 -> Could be derived, but keeping as is
+        fps={fps}
         width={1920}
         height={1080}
+        defaultProps={{ type: "full" as const, startFrame: 0 }}
+      />
+      
+      {/* 2. LinkedIn: The Insight (Nativo 16:9, ~120s) */}
+      <Composition
+        id="LinkedInInsight"
+        component={VibeCodingDebate}
+        durationInFrames={fps * 120} // 2 minutes
+        fps={fps}
+        width={1920}
+        height={1080}
+        defaultProps={{ 
+          type: "insight" as const, 
+          startFrame: Math.round(linkedinStartSeconds * fps) 
+        }}
+      />
+      
+      {/* 3. TikTok/Reels: Atomic (Vertical 9:16, ~60s) */}
+      <Composition
+        id="TikTokViral"
+        component={VibeCodingDebate}
+        durationInFrames={fps * 60} // 1 minute
+        fps={fps}
+        width={1080}
+        height={1920}
+        defaultProps={{ 
+          type: "atomic" as const, 
+          startFrame: Math.round(tiktokStartSeconds * fps) 
+        }}
       />
     </>
   );

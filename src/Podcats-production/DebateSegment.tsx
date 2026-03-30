@@ -10,17 +10,32 @@ import { Subtitle } from "./Subtitle";
 export const DebateSegment: React.FC<{
   segmentProps: TimelineSegment & { durationFrames: number };
   segmentIndex: number;
-}> = ({ segmentProps, segmentIndex }) => {
+  type?: "full" | "insight" | "atomic";
+}> = ({ segmentProps, segmentIndex, type = "full" }) => {
   const speakerId = segmentProps.speaker_id as 0 | 1;
+
+  // Decide how to render Avatars based on the format
+  const renderAvatars = () => {
+    if (type === "atomic") {
+      // TikTok/Vertical: only show the active speaker, centered and larger
+      return <Avatar speakerId={speakerId} isActive={true} side="center" type={type} />;
+    }
+    // YouTube / LinkedIn: show both on left/right
+    return (
+      <>
+        <Avatar speakerId={0} isActive={speakerId === 0} side="left" type={type} />
+        <Avatar speakerId={1} isActive={speakerId === 1} side="right" type={type} />
+      </>
+    );
+  };
 
   return (
     <AbsoluteFill>
-      {/* Layer 1: Animated gradient background */}
-      <AnimatedBackground segmentIndex={segmentIndex} />
+      {/* Layer 1: Animated gradient background — continuous, no cuts */}
+      <AnimatedBackground />
 
-      {/* Layer 2: Avatars on both sides */}
-      <Avatar speakerId={0} isActive={speakerId === 0} side="left" />
-      <Avatar speakerId={1} isActive={speakerId === 1} side="right" />
+      {/* Layer 2: Avatars */}
+      {renderAvatars()}
 
       {/* Layer 3: Quote card + fun tags in the center */}
       <CenterContent
@@ -28,6 +43,7 @@ export const DebateSegment: React.FC<{
         speakerId={speakerId}
         durationFrames={segmentProps.durationFrames}
         segmentIndex={segmentIndex}
+        type={type}
       />
 
       {/* Layer 4: Headline in the upper-center area */}
@@ -35,13 +51,14 @@ export const DebateSegment: React.FC<{
         style={{
           justifyContent: "flex-start",
           alignItems: "center",
-          paddingTop: 80,
+          paddingTop: type === "atomic" ? 120 : 80,
         }}
       >
         <Headline
           text={segmentProps.overlay_ui.headline}
           segmentIndex={segmentIndex}
           durationFrames={segmentProps.durationFrames}
+          type={type}
         />
       </AbsoluteFill>
 

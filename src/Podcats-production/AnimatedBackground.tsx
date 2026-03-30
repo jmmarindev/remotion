@@ -1,5 +1,5 @@
 import React from "react";
-import { interpolate, useCurrentFrame } from "remotion";
+import { useCurrentFrame } from "remotion";
 
 /**
  * 4 gradient palettes that cycle based on segmentIndex.
@@ -12,17 +12,9 @@ const PALETTES = [
   { a: "#1c1417", b: "#2d1f2b", c: "#1a1225", accent: "rgba(245,87,108,0.12)" },
 ];
 
-export const AnimatedBackground: React.FC<{
-  segmentIndex: number;
-}> = ({ segmentIndex }) => {
+export const AnimatedBackground: React.FC = () => {
   const frame = useCurrentFrame();
-  const palette = PALETTES[segmentIndex % PALETTES.length];
-
-  // Fade in from black on segment entrance
-  const fadeIn = interpolate(frame, [0, 20], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  const palette = PALETTES[0];
 
   // Subtle floating orb positions (driven by frame, no CSS animations)
   const orb1X = 30 + Math.sin(frame * 0.015) * 15;
@@ -38,8 +30,8 @@ export const AnimatedBackground: React.FC<{
         position: "absolute",
         inset: 0,
         background: `linear-gradient(135deg, ${palette.a} 0%, ${palette.b} 50%, ${palette.c} 100%)`,
-        opacity: fadeIn,
         overflow: "hidden",
+        filter: `hue-rotate(${frame * 0.05}deg)`,
       }}
     >
       {/* Floating orb 1 */}

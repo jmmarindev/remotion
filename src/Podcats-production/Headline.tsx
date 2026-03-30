@@ -19,10 +19,20 @@ export const Headline: React.FC<{
   text: string;
   segmentIndex: number;
   durationFrames: number;
-}> = ({ text, segmentIndex, durationFrames }) => {
+  type?: "full" | "insight" | "atomic";
+}> = ({ text, segmentIndex, durationFrames, type = "full" }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const variant: HeadlineVariant = HEADLINE_VARIANTS[segmentIndex % HEADLINE_VARIANTS.length];
+
+  const fontSize = type === "atomic" ? 110 : 72;
+  const padding = type === "atomic" ? "0 40px" : "0 120px";
+  
+  const currentStyle = {
+    ...baseStyle,
+    fontSize,
+    padding,
+  };
 
   // Entrance spring (delay 5 frames)
   const entranceSpring = spring({
@@ -76,7 +86,7 @@ export const Headline: React.FC<{
       };
       // Override the text content via a different approach below
       return (
-        <div style={{ ...baseStyle, ...variantStyle }}>
+        <div style={{ ...currentStyle, ...variantStyle }}>
           {text.slice(0, charsToShow)}
           {charsToShow < text.length && (
             <span
@@ -91,7 +101,7 @@ export const Headline: React.FC<{
     }
   }
 
-  return <div style={{ ...baseStyle, ...variantStyle }}>{text}</div>;
+  return <div style={{ ...currentStyle, ...variantStyle }}>{text}</div>;
 };
 
 const baseStyle: React.CSSProperties = {

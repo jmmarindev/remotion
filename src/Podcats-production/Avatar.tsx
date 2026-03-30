@@ -9,8 +9,9 @@ const SPEAKER_COLORS = {
 export const Avatar: React.FC<{
   speakerId: 0 | 1;
   isActive: boolean;
-  side: "left" | "right";
-}> = ({ speakerId, isActive, side }) => {
+  side: "left" | "right" | "center";
+  type?: "full" | "insight" | "atomic";
+}> = ({ speakerId, isActive, side, type = "full" }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const colors = SPEAKER_COLORS[speakerId];
@@ -21,8 +22,11 @@ export const Avatar: React.FC<{
     fps,
     config: { damping: 12, stiffness: 150 },
   });
+  
+  // Make the active avatar slightly larger on atomic format
+  const activeMaxScale = type === "atomic" ? 1.2 : 1.05;
   const scale = isActive
-    ? interpolate(scaleSpring, [0, 1], [0.95, 1.05])
+    ? interpolate(scaleSpring, [0, 1], [0.95, activeMaxScale])
     : interpolate(scaleSpring, [0, 1], [1, 0.9]);
 
   // Pulsing glow when active
@@ -44,13 +48,27 @@ export const Avatar: React.FC<{
     return interpolate(wave, [-1, 1], [8, 24]);
   });
 
+  const getPositionStyles = (): React.CSSProperties => {
+    if (side === "center") {
+      return {
+        left: "50%",
+        top: "42%",
+        transform: `translate(-50%, -50%) scale(${scale})`,
+        zIndex: 10,
+      };
+    }
+    return {
+      [side]: 80,
+      top: "50%",
+      transform: `translateY(-50%) scale(${scale})`,
+    };
+  };
+
   return (
     <div
       style={{
         position: "absolute",
-        [side]: 80,
-        top: "50%",
-        transform: `translateY(-50%) scale(${scale})`,
+        ...getPositionStyles(),
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
