@@ -22,8 +22,12 @@ export const debateData = {
     episode_title: "Vibe Coding vs Rigor Técnico",
     vibe_theme: "tech-analytical / debate",
     distribution_targets: {
-      linkedin_start: "00:01:35,440", // Fragmento serio: 0 * IA = 0
-      tiktok_start: "00:03:52,900"    // Fragmento energético/dinámico
+      linkedin_start: "00:02:48,620", // Start of LinkedIn insight clip
+      linkedin_end: "00:04:30,380",   // End of LinkedIn insight clip
+      linkedin_hook: "¿Te has preguntado por qué el perfeccionismo mata a tantos fundadores?",
+      tiktok_start: "00:02:48,620", // Start of TikTok atomic clip
+      tiktok_end: "00:04:01,590",   // End of TikTok atomic clip
+      tiktok_hook: "¡Alerta! El perfeccionismo está matando startups."
     }
   },
   timeline: [

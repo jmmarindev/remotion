@@ -9,7 +9,11 @@ import { debateData, timeToSeconds } from "./Podcats-production/data";
 
 const fps = 30;
 const linkedinStartSeconds = timeToSeconds(debateData.metadata.distribution_targets.linkedin_start);
+const linkedinEndSeconds = timeToSeconds(debateData.metadata.distribution_targets.linkedin_end);
 const tiktokStartSeconds = timeToSeconds(debateData.metadata.distribution_targets.tiktok_start);
+const tiktokEndSeconds = timeToSeconds(debateData.metadata.distribution_targets.tiktok_end);
+
+const HOOK_DURATION_FPS = fps * 3; // 3 second intro hook
 
 // Each <Composition> is an entry in the sidebar!
 
@@ -84,7 +88,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="LinkedInInsight"
         component={VibeCodingDebate}
-        durationInFrames={fps * 120} // 2 minutes
+        durationInFrames={Math.round((linkedinEndSeconds - linkedinStartSeconds) * fps) + HOOK_DURATION_FPS}
         fps={fps}
         width={1920}
         height={1080}
@@ -98,7 +102,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="TikTokViral"
         component={VibeCodingDebate}
-        durationInFrames={fps * 60} // 1 minute
+        durationInFrames={Math.round((tiktokEndSeconds - tiktokStartSeconds) * fps) + HOOK_DURATION_FPS}
         fps={fps}
         width={1080}
         height={1920}
