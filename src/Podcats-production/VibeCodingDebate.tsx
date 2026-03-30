@@ -21,8 +21,6 @@ export const VibeCodingDebate: React.FC<{ type?: "full" | "insight" | "atomic"; 
     ? (debateData.metadata.distribution_targets as any).tiktok_hook 
     : null;
 
-  console.log("VibeCodingDebate Render:", { type, hookText, startFrame });
-
   return (
     <AbsoluteFill style={{ backgroundColor: "black" }}>
       {/* 1. The Hook Intro (only for social media clips) */}

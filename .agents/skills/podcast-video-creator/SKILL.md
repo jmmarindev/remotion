@@ -73,10 +73,12 @@ El archivo `data.ts` que generarás debe contener un objeto `metadata` que marqu
    - Busca el bloque de ~120 segundos que contenga la Key Quote más disruptiva, seria, o polémica.
    - Idealmente un segmento donde el ponente 1 corrige o aporta rigor (mayor impacto profesional).
    - Extrae su `start_time` original.
+   - **`linkedin_hook`**: Una pregunta o frase de 1 sola línea (máx 15 palabras) que enganche al usuario profesional.
 
 2. **`tiktok_start` (El Atomic Clip):**
    - Busca el bloque de ~60 segundos con mayor **densidad de Fun Tags**, sarcasmo, energía y cambios rápidos de turno.
    - Extrae su `start_time` original.
+   - **`tiktok_hook`**: Una frase corta, "clickbait" pero honesta, (máx 10 palabras) con emojis.
 
 ### Fase 4: Generar `data.ts`
 
@@ -86,7 +88,9 @@ Crea el archivo `src/Podcats-production/data.ts` con esta nueva estructura exact
 export const metadata = {
   distribution_targets: {
     linkedin_start: "00:03:15,000", // Start time del Insight Clip (~120s)
-    tiktok_start: "00:01:20,500"    // Start time del Atomic Clip (~60s)
+    linkedin_hook: "¿Te has preguntado por qué X importa tanto?", 
+    tiktok_start: "00:01:20,500",    // Start time del Atomic Clip (~60s)
+    tiktok_hook: "¡Alerta! Descubre por qué X está muriendo..."
   }
 };
 
@@ -162,6 +166,11 @@ El vídeo se compone de estas capas visuales (de fondo a frente):
 
 ```
 ┌──────────────────────────────────────────────────────────┐
+│  Layer 0: HookBanner.tsx (0s - 3s)  ← SOLO Clips Cortos  │
+│  → Aparece solo en formatos 'insight' y 'atomic'.        │
+│  → Dura exactamente 3 segundos (90 frames a 30fps).      │
+│  → Tipografía gigante, animada con spring, fondo mesh.   │
+│                                                          │
 │  Layer 1: AnimatedBackground.tsx  ← CONTINUO, SIN CORTES│
 │  → Un único fondo que corre durante todo el vídeo.       │
 │  → Gradient oscuro base + 3 orbs flotantes (blur 80px)   │
@@ -205,17 +214,18 @@ El vídeo se compone de estas capas visuales (de fondo a frente):
 **NUNCA** uses `<Series>` para secuenciar segmentos. Siempre usa `<Sequence from={startFrame}>`:
 
 ```tsx
-// ✅ CORRECTO — cada segmento anclado a su frame absoluto
-{segments.map((segment, i) => (
-  <Sequence
-    key={i}
-    from={segment.startFrame}
-    durationInFrames={segment.durationFrames}
-    premountFor={10}
-  >
-    <DebateSegment segmentProps={segment} segmentIndex={i} />
+{/* ✅ CORRECTO — Cada segmento anclado a su frame absoluto, 
+    y la conversación desplazada 3s para dejar espacio al Hook Intro */}
+<Sequence from={hookText ? 90 : 0}>
+  <Sequence from={-startFrame}>
+    <Audio ... />
+    {segments.map((segment, i) => (
+      <Sequence key={i} from={segment.startFrame} ...>
+        <DebateSegment ... />
+      </Sequence>
+    ))}
   </Sequence>
-))}
+</Sequence>
 
 // ❌ INCORRECTO — <Series> acumula errores de redondeo
 <Series>
