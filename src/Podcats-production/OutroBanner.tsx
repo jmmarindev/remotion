@@ -70,10 +70,15 @@ export const OutroBanner: React.FC<{
             width: isTikTok ? "100%" : "min(1100px, 100%)",
             padding: isTikTok ? "46px 38px" : "42px 54px",
             borderRadius: 36,
-            background: "rgba(10, 10, 30, 0.58)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            boxShadow: "0 30px 80px rgba(0,0,0,0.38)",
-            backdropFilter: "blur(24px)",
+            background: "rgba(4, 7, 18, 0.72)",
+            border: "1px solid rgba(79,172,254,0.45)",
+            boxShadow: [
+              "0 30px 80px rgba(0,0,0,0.5)",
+              "0 0 60px rgba(79,172,254,0.12)",
+              "0 0 120px rgba(240,147,251,0.08)",
+              "inset 0 0 0 1px rgba(240,147,251,0.15)",
+            ].join(", "),
+            backdropFilter: "blur(20px)",
             opacity: panelOpacity,
             transform: `translateY(${panelTranslate}px)`,
             display: "flex",
@@ -81,8 +86,51 @@ export const OutroBanner: React.FC<{
             gap: isTikTok ? 28 : 24,
             alignItems: isTikTok ? "stretch" : "center",
             textAlign: isTikTok ? "left" : "center",
+            position: "relative",
           }}
         >
+          {/* Corner brackets */}
+          {(
+            [
+              {
+                top: 16,
+                left: 16,
+                borderTop: "2px solid rgba(79,172,254,0.7)",
+                borderLeft: "2px solid rgba(79,172,254,0.7)",
+              },
+              {
+                top: 16,
+                right: 16,
+                borderTop: "2px solid rgba(79,172,254,0.7)",
+                borderRight: "2px solid rgba(79,172,254,0.7)",
+              },
+              {
+                bottom: 16,
+                left: 16,
+                borderBottom: "2px solid rgba(79,172,254,0.7)",
+                borderLeft: "2px solid rgba(79,172,254,0.7)",
+              },
+              {
+                bottom: 16,
+                right: 16,
+                borderBottom: "2px solid rgba(79,172,254,0.7)",
+                borderRight: "2px solid rgba(79,172,254,0.7)",
+              },
+            ] as React.CSSProperties[]
+          ).map((bracketStyle, i) => (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                width: 28,
+                height: 28,
+                opacity: panelOpacity,
+                filter: "drop-shadow(0 0 4px rgba(79,172,254,0.7))",
+                ...bracketStyle,
+              }}
+            />
+          ))}
+
           <div
             style={{
               display: "inline-flex",

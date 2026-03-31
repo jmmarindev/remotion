@@ -23,11 +23,12 @@ export const Headline: React.FC<{
 }> = ({ text, segmentIndex, durationFrames, type = "full" }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const variant: HeadlineVariant = HEADLINE_VARIANTS[segmentIndex % HEADLINE_VARIANTS.length];
+  const variant: HeadlineVariant =
+    HEADLINE_VARIANTS[segmentIndex % HEADLINE_VARIANTS.length];
 
   const fontSize = type === "atomic" ? 110 : 72;
   const padding = type === "atomic" ? "0 40px" : "0 120px";
-  
+
   const currentStyle = {
     ...baseStyle,
     fontSize,
@@ -46,7 +47,7 @@ export const Headline: React.FC<{
     frame,
     [durationFrames - 15, durationFrames],
     [1, 0],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
   );
 
   // Calculate variant-specific styles
@@ -79,7 +80,7 @@ export const Headline: React.FC<{
         interpolate(frame, [5, 5 + text.length * 1.5], [0, text.length], {
           extrapolateLeft: "clamp",
           extrapolateRight: "clamp",
-        })
+        }),
       );
       variantStyle = {
         opacity: exitOpacity,
@@ -91,8 +92,12 @@ export const Headline: React.FC<{
           {charsToShow < text.length && (
             <span
               style={{
-                borderRight: frame % 15 < 8 ? "3px solid white" : "3px solid transparent",
+                borderRight:
+                  frame % 15 < 8
+                    ? `3px solid #4facfe`
+                    : "3px solid transparent",
                 marginLeft: 2,
+                boxShadow: frame % 15 < 8 ? "0 0 8px #4facfe" : "none",
               }}
             />
           )}
@@ -110,7 +115,13 @@ const baseStyle: React.CSSProperties = {
   fontWeight: 900,
   color: "white",
   textAlign: "center",
-  textShadow: "0 4px 30px rgba(0,0,0,0.8), 0 0 60px rgba(79,172,254,0.3)",
+  textShadow: [
+    "0 2px 0 rgba(0,0,0,0.95)",
+    "0 6px 24px rgba(0,0,0,0.85)",
+    "0 0 60px rgba(79,172,254,0.55)",
+    "0 0 120px rgba(79,172,254,0.25)",
+  ].join(", "),
+  WebkitTextStroke: "1.5px rgba(0,0,0,0.7)",
   lineHeight: 1.15,
   padding: "0 120px",
   letterSpacing: -1,

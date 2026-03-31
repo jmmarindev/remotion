@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/Podcats-production/studioAssets.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1774947765623,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1774947765623,
+            "name": "Commit-0",
+            "content": "/**\n * Shared studio/brand assets that are not episode-specific.\n * To swap the background video: change backgroundVideo and put the\n * new file in public/ — nothing else needs to change.\n */\nexport const STUDIO_ASSETS = {\n  backgroundVideo: \"background.mp4\",\n} as const;\n"
+        }
+    ]
+}

@@ -56,12 +56,22 @@ La conversación no es entre dos voces abstractas: es una dialéctica fija entre
 ### Reglas Visuales para Avatares
 
 - Los avatares usan imágenes PNG reales de Leo y Lola, ubicadas en `src/Podcats-production/assets/leo-avatar.png` y `lola-avatar.png`.
-- Cada PNG se renderiza dentro de un anillo circular con `conic-gradient` animado y glow pulsante (color del ponente): cian para Leo, magenta para Lola.
+- Los PNG **deben estar también en `public/`** para poder servirse via `staticFile()`. Al incorporar nuevos avatares, copiarlos siempre a `public/` además de `src/Podcats-production/assets/`.
+- Cada PNG se renderiza con `<Img>` de `remotion` (no `<img>` nativo) dentro de un div circular `borderRadius: "50%"`, con `objectFit: "cover"` y `width/height: "100%"`.
+- El `<Img>` queda envuelto en el anillo de `conic-gradient` animado (`from ${frame * 2}deg`) y glow pulsante `boxShadow`. No hay fondo interno — el PNG ocupa todo el círculo.
 - El avatar activo tiene `opacity: 1`, scale ligeramente aumentado y glow intenso. El inactivo tiene `opacity: 0.35` y scale reducido.
 - En composiciones horizontales deben leerse como una confrontación visual izquierda (Leo) vs derecha (Lola).
 - En shorts verticales solo aparece el avatar del ponente activo, centrado al 42% vertical con scale 1.2.
 - La etiqueta bajo el avatar debe mostrar el nombre real: **"Leo"** para `speaker_id: 0`, **"Lola"** para `speaker_id: 1`. Nunca "Speaker A" ni "Speaker B".
-- Si en un futuro episodio los presentadores cambian, los PNG correspondientes deben añadirse a `src/Podcats-production/assets/` y el Avatar.tsx debe actualizarse para mapear `speaker_id` a los nuevos archivos.
+- El mapeo de `speaker_id` a nombre y a ruta del PNG se define en dos objetos constantes al inicio de `Avatar.tsx`:
+  ```tsx
+  const SPEAKER_AVATARS: Record<0 | 1, string> = {
+    0: staticFile("leo-avatar.png"),
+    1: staticFile("lola-avatar.png"),
+  };
+  const SPEAKER_NAMES: Record<0 | 1, string> = { 0: "Leo", 1: "Lola" };
+  ```
+- Si en un futuro episodio los presentadores cambian, copiar los nuevos PNG a `public/` y actualizar estos dos objetos en `Avatar.tsx`.
 
 ## Marco Editorial Obligatorio
 
@@ -320,9 +330,11 @@ El vídeo se compone de estas capas visuales (de fondo a frente):
 │    corto antes de desaparecer                            │
 │                                                          │
 │  Layer 1: AnimatedBackground.tsx  ← CONTINUO, SIN CORTES│
-│  → Un único fondo que corre durante todo el vídeo.       │
-│  → Gradient oscuro base + 3 orbs flotantes (blur 80px)   │
-│  → hue-rotate(frame * 0.05deg) = cambio de color suave   │
+│  → Vídeo MP4 en bucle (`loop muted`) vía `<Video>` de   │
+│    @remotion/media. Asset en public/cityscape-neon.mp4. │
+│  → objectFit: cover — cubre el canvas sin barras.       │
+│  → Overlay oscuro rgba(0,0,0,0.38) para legibilidad.    │
+│  → Scanlines CRT sutiles + viñeta perimetral encima.    │
 │  → NO recibe props de segmento ni de tipo de plataforma  │
 │  → Igual en YouTube, LinkedIn y TikTok                   │
 │                                                          │
@@ -423,13 +435,60 @@ Usar `Math.round` (no `Math.floor`) y derivar `durationFrames` como `endFrame - 
 
 ## Paleta de Colores del Sistema
 
-| Elemento      | Color                                                  | Uso                                                                                                 |
-| ------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| Speaker 0     | `#4facfe → #00f2fe`                                    | Avatar, borde subtítulo, glow tags                                                                  |
-| Speaker 1     | `#f093fb → #f5576c`                                    | Avatar, borde subtítulo, glow tags                                                                  |
-| Background    | Palette `#0f0c29 → #302b63 → #24243e` única y continua | Corre sin cortes durante todo el vídeo. `hue-rotate(frame * 0.05deg)` crea el cambio de color suave |
-| Texto         | `rgba(255,255,255,0.92-0.94)`                          | Subtítulos, quotes                                                                                  |
-| Glassmorphism | `rgba(10,10,30,0.65)` + `blur(20px)`                   | Cards, subtítulos                                                                                   |
+| Elemento       | Color                                     | Uso                                                                        |
+| -------------- | ----------------------------------------- | -------------------------------------------------------------------------- |
+| Speaker 0      | `#4facfe → #00f2fe`                       | Avatar, borde subtítulo, glow tags                                         |
+| Speaker 1      | `#f093fb → #f5576c`                       | Avatar, borde subtítulo, glow tags                                         |
+| Background sky | `#0d0824 → #1a0f3c → #0e1f4a → #091e2e`   | Degradado vertical indigo-púrpura → teal. Cielo nocturno estilo Futurama   |
+| Skyline        | `#0d0d1e` back / `#080810` front          | Siluetas SVG de dos planos con ventanas `rgba(255,230,120,0.65)` y antenas |
+| Planeta        | `#c8a0f8 → #7c3fbf → #3a1a6e`             | Luna/planeta violeta top-right con anillo y glow pulsante                  |
+| Flying cars    | `#00eaff` / `#ff60d8`                     | Coches voladores cian/magenta con trail de luz, frame-based                |
+| Texto          | `rgba(255,255,255,0.92-0.94)`             | Subtítulos, quotes                                                         |
+| Glassmorphism  | `rgba(4,7,18,0.72-0.82)` + `blur(8-12px)` | Cards, subtítulos — poca niebla para mantener crisp visual                 |
+
+## Estética Futurama — Reglas de Implementación
+
+El sistema visual apunta a sci-fi retro-futurista de los 90: neón sobre oscuro, stroke en tipografía, brackets decorativos y paleta cian/magenta.
+
+### Headline.tsx
+
+- `WebkitTextStroke: "1.5px rgba(0,0,0,0.7)"` — contorno negro para lectura sobre neon.
+- `textShadow`: 4 capas — drop duro (`0 2px 0 black`), drop suave (`0 6px 24px black`), glow cian (`0 0 60px #4facfe55`), halo amplio (`0 0 120px #4facfe25`).
+- Cursor typewriter usa `#4facfe` con `boxShadow` glow, no blanco generic.
+
+### KeywordHighlight.tsx — QuoteCard
+
+- `border: "2px solid ${accent.color}99"` — borde coloreado por ponente, no blanco genérico.
+- `backdropFilter: "blur(12px)"` — menos niebla que el baseline SaaS.
+- `backgroundColor: "rgba(5,8,22,0.72)"` — fondo más oscuro, contraste sobre video de ciudad.
+- `outline: "1px solid ${accent.color}22"` con `outlineOffset: 6` — marco exterior sutil.
+- Texto de la quote con `textShadow: "0 0 20px ${accent.color}44"` — glow suave.
+
+### KeywordHighlight.tsx — FunTag
+
+- `border: "2px solid ${accent.color}cc"` — borde bien visible (vs `66` anterior).
+- `textShadow: "0 0 10px ${accent.glow}"` — etiqueta con aura de color del speaker.
+- Background más opaco: `${accent.color}33 → ${accent.color}66`.
+
+### Subtitle.tsx
+
+- `fontFamily: '"Courier New", "JetBrains Mono", monospace'` — terminal feel.
+- `backdropFilter: "blur(8px)"` — mínimo blur, visual más limpio sobre el video.
+- `backgroundColor: "rgba(4,7,18,0.82)"` — más opaco para legibilidad.
+- Palabra nueva: `textShadow: "0 0 12px ${borderColor}, 0 0 24px ${borderColor}66"` — glow de neón; `fontWeight: 700`, `color: borderColor`.
+
+### HookBanner.tsx
+
+- 4 brackets de esquina con CSS borders en `position: "absolute"`, 48×48px, `filter: "drop-shadow(0 0 6px rgba(79,172,254,0.8))"`.
+- Implementación: array de `React.CSSProperties[]` con valores de border pre-computados, spread por el div. Evitar `as const` con propiedades opcionales — causa errores TS en discriminated unions.
+- Título: mismo sistema de `WebkitTextStroke` + 4-layer `textShadow` que `Headline.tsx`.
+
+### OutroBanner.tsx
+
+- Panel: `border: "1px solid rgba(79,172,254,0.45)"`, `boxShadow` con 4 capas incluyendo `inset` con magenta sutil.
+- `background: "rgba(4,7,18,0.72)"` — consistente con el sistema de Subtitle/QuoteCard.
+- 4 brackets de esquina interiores al panel, 28×28px, misma técnica que HookBanner.
+- `position: "relative"` obligatorio en el panel para que los brackets absolutos funcionen.
 
 ---
 

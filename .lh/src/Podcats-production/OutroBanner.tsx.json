@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1774885197210,
@@ -16,6 +16,10 @@
                 {
                     "date": 1774886735781,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,11 +13,16 @@\n   type: \"insight\" | \"atomic\";\n }> = ({ text, type }) => {\n   const frame = useCurrentFrame();\n   const { fps } = useVideoConfig();\n+  const backgroundOpacity = interpolate(frame, [0, 14], [0, 1], {\n+    extrapolateLeft: \"clamp\",\n+    extrapolateRight: \"clamp\",\n+  });\n+  const entryFrame = Math.max(frame - 4, 0);\n \n   const entry = spring({\n-    frame,\n+    frame: entryFrame,\n     fps,\n     config: { damping: 14, stiffness: 110 },\n   });\n \n@@ -25,18 +30,20 @@\n   const textOpacity = interpolate(entry, [0, 0.45], [0, 1], {\n     extrapolateLeft: \"clamp\",\n     extrapolateRight: \"clamp\",\n   });\n-  const panelOpacity = interpolate(frame, [0, 10], [0, 1], {\n+  const panelOpacity = interpolate(frame, [3, 18], [0, 1], {\n     extrapolateLeft: \"clamp\",\n     extrapolateRight: \"clamp\",\n   });\n   const panelTranslate = interpolate(entry, [0, 1], [40, 0]);\n   const glowScale = interpolate(entry, [0, 1], [0.8, 1.15]);\n \n   return (\n-    <AbsoluteFill style={{ backgroundColor: \"#000\" }}>\n-      <AnimatedBackground />\n+    <AbsoluteFill style={{ backgroundColor: \"transparent\" }}>\n+      <AbsoluteFill style={{ opacity: backgroundOpacity }}>\n+        <AnimatedBackground />\n+      </AbsoluteFill>\n \n       <AbsoluteFill\n         style={{\n           justifyContent: \"center\",\n"
+                },
+                {
+                    "date": 1774948956179,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -185,5 +185,16 @@\n                 fontSize: isTikTok ? 28 : 24,\n                 fontWeight: 800,\n                 letterSpacing: \"-0.02em\",\n                 fontFamily: \"Outfit, Inter, system-ui\",\n- \n\\ No newline at end of file\n+                boxShadow: \"0 16px 40px rgba(79,172,254,0.28)\",\n+              }}\n+            >\n+              <span>Canal oficial</span>\n+              <span style={{ fontSize: isTikTok ? 30 : 26 }}>→</span>\n+            </div>\n+          </div>\n+        </div>\n+      </AbsoluteFill>\n+    </AbsoluteFill>\n+  );\n+};\n"
                 }
             ],
             "date": 1774885197210,

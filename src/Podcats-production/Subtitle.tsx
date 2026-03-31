@@ -26,7 +26,7 @@ export const Subtitle: React.FC<{
     interpolate(frame, [10, revealEnd], [0, totalWords], {
       extrapolateLeft: "clamp",
       extrapolateRight: "clamp",
-    })
+    }),
   );
 
   // Container entrance spring
@@ -44,7 +44,7 @@ export const Subtitle: React.FC<{
     frame,
     [durationFrames - 10, durationFrames],
     [1, 0],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
   );
 
   const borderColor = SPEAKER_BORDER_COLORS[speakerId];
@@ -62,19 +62,60 @@ export const Subtitle: React.FC<{
     >
       <div
         style={{
-          backgroundColor: "rgba(10, 10, 30, 0.65)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderRadius: 20,
-          padding: "32px 40px",
+          backgroundColor: "rgba(4, 7, 18, 0.82)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          borderRadius: 16,
+          padding: "28px 36px",
           borderLeft: `6px solid ${borderColor}`,
-          boxShadow: `0 8px 32px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.08)`,
+          boxShadow: `0 0 30px ${borderColor}33, 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.06)`,
+          position: "relative",
         }}
       >
+        {/* Corner brackets in speaker color */}
+        {(
+          [
+            {
+              top: 8,
+              left: 8,
+              borderTop: `2px solid ${borderColor}cc`,
+              borderLeft: `2px solid ${borderColor}cc`,
+            },
+            {
+              top: 8,
+              right: 8,
+              borderTop: `2px solid ${borderColor}cc`,
+              borderRight: `2px solid ${borderColor}cc`,
+            },
+            {
+              bottom: 8,
+              left: 8,
+              borderBottom: `2px solid ${borderColor}cc`,
+              borderLeft: `2px solid ${borderColor}cc`,
+            },
+            {
+              bottom: 8,
+              right: 8,
+              borderBottom: `2px solid ${borderColor}cc`,
+              borderRight: `2px solid ${borderColor}cc`,
+            },
+          ] as React.CSSProperties[]
+        ).map((bracketStyle, i) => (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              width: 20,
+              height: 20,
+              filter: `drop-shadow(0 0 4px ${borderColor}99)`,
+              ...bracketStyle,
+            }}
+          />
+        ))}
         <div
           style={{
-            fontFamily: "Inter, sans-serif",
-            fontSize: 36,
+            fontFamily: '"Courier New", "JetBrains Mono", monospace',
+            fontSize: 34,
             color: "white",
             lineHeight: 1.6,
             display: "flex",
@@ -84,7 +125,6 @@ export const Subtitle: React.FC<{
         >
           {words.map((word, i) => {
             const isVisible = i < wordsToShow;
-            // Each newly appearing word gets a brief highlight
             const isJustAppeared = i === wordsToShow - 1;
 
             return (
@@ -95,9 +135,13 @@ export const Subtitle: React.FC<{
                   color: isVisible
                     ? isJustAppeared
                       ? borderColor
-                      : "white"
+                      : "rgba(255,255,255,0.95)"
                     : "rgba(255,255,255,0.1)",
-                  fontWeight: isJustAppeared ? 700 : 400,
+                  fontWeight: isJustAppeared ? 700 : 500,
+                  textShadow: isJustAppeared
+                    ? `0 0 12px ${borderColor}, 0 0 24px ${borderColor}66`
+                    : "none",
+                  transition: "color 0.1s",
                 }}
               >
                 {word}

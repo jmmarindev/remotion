@@ -1,8 +1,17 @@
 import React from "react";
-import { AbsoluteFill, spring, useCurrentFrame, useVideoConfig, interpolate } from "remotion";
+import {
+  AbsoluteFill,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+  interpolate,
+} from "remotion";
 import { AnimatedBackground } from "./AnimatedBackground";
 
-export const HookBanner: React.FC<{ text: string; type: "insight" | "atomic" }> = ({ text, type }) => {
+export const HookBanner: React.FC<{
+  text: string;
+  type: "insight" | "atomic";
+}> = ({ text, type }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -14,7 +23,7 @@ export const HookBanner: React.FC<{ text: string; type: "insight" | "atomic" }> 
   });
 
   const float = Math.sin(frame / 10) * 10;
-  
+
   const textScale = interpolate(entry, [0, 1], [0.8, 1]);
   const textOpacity = interpolate(entry, [0, 0.5], [0, 1]);
 
@@ -23,7 +32,7 @@ export const HookBanner: React.FC<{ text: string; type: "insight" | "atomic" }> 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <AnimatedBackground />
-      
+
       <AbsoluteFill
         style={{
           justifyContent: "center",
@@ -32,13 +41,56 @@ export const HookBanner: React.FC<{ text: string; type: "insight" | "atomic" }> 
           textAlign: "center",
         }}
       >
+        {/* Corner brackets */}
+        {(
+          [
+            {
+              top: 56,
+              left: 56,
+              borderTop: "3px solid rgba(79,172,254,0.85)",
+              borderLeft: "3px solid rgba(79,172,254,0.85)",
+            },
+            {
+              top: 56,
+              right: 56,
+              borderTop: "3px solid rgba(79,172,254,0.85)",
+              borderRight: "3px solid rgba(79,172,254,0.85)",
+            },
+            {
+              bottom: 56,
+              left: 56,
+              borderBottom: "3px solid rgba(79,172,254,0.85)",
+              borderLeft: "3px solid rgba(79,172,254,0.85)",
+            },
+            {
+              bottom: 56,
+              right: 56,
+              borderBottom: "3px solid rgba(79,172,254,0.85)",
+              borderRight: "3px solid rgba(79,172,254,0.85)",
+            },
+          ] as React.CSSProperties[]
+        ).map((bracketStyle, i) => (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              width: 48,
+              height: 48,
+              opacity: entry,
+              filter: "drop-shadow(0 0 6px rgba(79,172,254,0.8))",
+              ...bracketStyle,
+            }}
+          />
+        ))}
+
         {/* Glow effect back the text */}
         <div
           style={{
             position: "absolute",
             width: "60%",
             height: "40%",
-            background: "radial-gradient(circle, rgba(79,172,254,0.4) 0%, transparent 70%)",
+            background:
+              "radial-gradient(circle, rgba(79,172,254,0.4) 0%, transparent 70%)",
             filter: "blur(60px)",
             opacity: textOpacity,
           }}
@@ -54,7 +106,13 @@ export const HookBanner: React.FC<{ text: string; type: "insight" | "atomic" }> 
             fontFamily: "Outfit, Inter, system-ui",
             transform: `scale(${textScale}) translateY(${float}px)`,
             opacity: textOpacity,
-            textShadow: "0 10px 30px rgba(0,0,0,0.5)",
+            textShadow: [
+              "0 2px 0 rgba(0,0,0,0.95)",
+              "0 8px 24px rgba(0,0,0,0.85)",
+              "0 0 60px rgba(79,172,254,0.6)",
+              "0 0 120px rgba(79,172,254,0.25)",
+            ].join(", "),
+            WebkitTextStroke: "2px rgba(0,0,0,0.7)",
             letterSpacing: "-0.04em",
           }}
         >

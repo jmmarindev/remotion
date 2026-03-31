@@ -2,8 +2,16 @@ import React from "react";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 
 const SPEAKER_ACCENTS = {
-  0: { color: "#4facfe", glow: "rgba(79,172,254,0.4)", bg: "rgba(79,172,254,0.08)" },
-  1: { color: "#f093fb", glow: "rgba(240,147,251,0.4)", bg: "rgba(240,147,251,0.08)" },
+  0: {
+    color: "#4facfe",
+    glow: "rgba(79,172,254,0.4)",
+    bg: "rgba(79,172,254,0.08)",
+  },
+  1: {
+    color: "#f093fb",
+    glow: "rgba(240,147,251,0.4)",
+    bg: "rgba(240,147,251,0.08)",
+  },
 } as const;
 
 /**
@@ -91,7 +99,13 @@ export const CenterContent: React.FC<{
   durationFrames: number;
   segmentIndex: number;
   type?: "full" | "insight" | "atomic";
-}> = ({ textContent, speakerId, durationFrames, segmentIndex, type = "full" }) => {
+}> = ({
+  textContent,
+  speakerId,
+  durationFrames,
+  segmentIndex,
+  type = "full",
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const accent = SPEAKER_ACCENTS[speakerId];
@@ -103,7 +117,7 @@ export const CenterContent: React.FC<{
     frame,
     [durationFrames - 12, durationFrames],
     [1, 0],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
   );
 
   return (
@@ -177,13 +191,15 @@ const QuoteCard: React.FC<{
       style={{
         transform: `scale(${scale}) translateY(${floatY}px)`,
         opacity,
-        backgroundColor: accent.bg,
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
+        backgroundColor: "rgba(5, 8, 22, 0.72)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
         borderRadius: 24,
         padding: "36px 48px",
-        border: `1px solid rgba(255,255,255,0.12)`,
-        boxShadow: `0 0 40px ${accent.glow}, 0 12px 40px rgba(0,0,0,0.35)`,
+        border: `2px solid ${accent.color}99`,
+        boxShadow: `0 0 50px ${accent.glow}, 0 0 120px ${accent.color}22, 0 12px 40px rgba(0,0,0,0.5)`,
+        outline: `1px solid ${accent.color}22`,
+        outlineOffset: 6,
         maxWidth: 800,
         position: "relative",
       }}
@@ -209,11 +225,12 @@ const QuoteCard: React.FC<{
           fontFamily: "Inter, sans-serif",
           fontSize: 34,
           fontWeight: 500,
-          color: "rgba(255,255,255,0.94)",
+          color: "rgba(255,255,255,0.97)",
           textAlign: "center",
           lineHeight: 1.5,
           margin: 0,
           fontStyle: "italic",
+          textShadow: `0 0 20px ${accent.color}44`,
         }}
       >
         {quote}
@@ -246,9 +263,10 @@ const FunTag: React.FC<{
   const rotation = Math.sin(frame * 0.03 + phase) * 5;
 
   // Scale pulse when fully entered
-  const pulse = entrance >= 0.95
-    ? 1 + Math.sin(frame * 0.1 + index) * 0.05
-    : interpolate(entrance, [0, 1], [0.4, 1]);
+  const pulse =
+    entrance >= 0.95
+      ? 1 + Math.sin(frame * 0.1 + index) * 0.05
+      : interpolate(entrance, [0, 1], [0.4, 1]);
 
   const opacity = entrance;
 
@@ -259,13 +277,14 @@ const FunTag: React.FC<{
         fontSize: 24,
         fontWeight: 700,
         color: "white",
-        background: `linear-gradient(135deg, ${accent.color}22, ${accent.color}55)`,
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
+        background: `linear-gradient(135deg, ${accent.color}33, ${accent.color}66)`,
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
         padding: "14px 28px",
         borderRadius: 40,
-        border: `2px solid ${accent.color}66`,
-        boxShadow: `0 0 20px ${accent.glow}`,
+        border: `2px solid ${accent.color}cc`,
+        boxShadow: `0 0 24px ${accent.glow}, 0 0 48px ${accent.color}22`,
+        textShadow: `0 0 10px ${accent.glow}`,
         transform: `translateX(${floatX}px) translateY(${floatY}px) rotate(${rotation}deg) scale(${pulse})`,
         opacity,
         whiteSpace: "nowrap",

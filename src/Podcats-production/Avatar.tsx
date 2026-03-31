@@ -1,9 +1,34 @@
 import React from "react";
-import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import {
+  Img,
+  interpolate,
+  spring,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+
+const SPEAKER_AVATARS: Record<0 | 1, string> = {
+  0: staticFile("leo-avatar.png"),
+  1: staticFile("lola-avatar.png"),
+};
+
+const SPEAKER_NAMES: Record<0 | 1, string> = {
+  0: "Leo",
+  1: "Lola",
+};
 
 const SPEAKER_COLORS = {
-  0: { primary: "#4facfe", secondary: "#00f2fe", glow: "rgba(79, 172, 254, 0.6)" },
-  1: { primary: "#f093fb", secondary: "#f5576c", glow: "rgba(240, 147, 251, 0.6)" },
+  0: {
+    primary: "#4facfe",
+    secondary: "#00f2fe",
+    glow: "rgba(79, 172, 254, 0.6)",
+  },
+  1: {
+    primary: "#f093fb",
+    secondary: "#f5576c",
+    glow: "rgba(240, 147, 251, 0.6)",
+  },
 } as const;
 
 export const Avatar: React.FC<{
@@ -22,7 +47,7 @@ export const Avatar: React.FC<{
     fps,
     config: { damping: 12, stiffness: 150 },
   });
-  
+
   // Make the active avatar slightly larger on atomic format
   const activeMaxScale = type === "atomic" ? 1.2 : 1.05;
   const scale = isActive
@@ -31,22 +56,11 @@ export const Avatar: React.FC<{
 
   // Pulsing glow when active
   const glowPulse = isActive
-    ? interpolate(
-        Math.sin(frame * 0.12),
-        [-1, 1],
-        [0.4, 1],
-      )
+    ? interpolate(Math.sin(frame * 0.12), [-1, 1], [0.4, 1])
     : 0;
 
   // Opacity: bright when active, dimmed when not
   const opacity = isActive ? 1 : 0.35;
-
-  // Mic icon bars animation (3 bars that bounce when active)
-  const barHeights = [0.5, 0.8, 0.6].map((baseH, i) => {
-    if (!isActive) return baseH * 14;
-    const wave = Math.sin(frame * 0.2 + i * 1.5);
-    return interpolate(wave, [-1, 1], [8, 24]);
-  });
 
   const getPositionStyles = (): React.CSSProperties => {
     if (side === "center") {
@@ -79,40 +93,24 @@ export const Avatar: React.FC<{
       {/* Glow ring */}
       <div
         style={{
-          width: 160,
-          height: 160,
+          width: 240,
+          height: 240,
           borderRadius: "50%",
           background: `conic-gradient(from ${frame * 2}deg, ${colors.primary}, ${colors.secondary}, ${colors.primary})`,
           padding: 4,
           boxShadow: `0 0 ${30 + glowPulse * 40}px ${10 + glowPulse * 20}px ${colors.glow}`,
         }}
       >
-        {/* Inner circle with mic icon */}
-        <div
+        {/* Avatar PNG */}
+        <Img
+          src={SPEAKER_AVATARS[speakerId]}
           style={{
             width: "100%",
             height: "100%",
             borderRadius: "50%",
-            background: "linear-gradient(145deg, #1a1a2e, #16213e)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 4,
+            objectFit: "cover",
           }}
-        >
-          {/* Mic bars */}
-          {barHeights.map((h, i) => (
-            <div
-              key={i}
-              style={{
-                width: 8,
-                height: h,
-                borderRadius: 4,
-                background: `linear-gradient(to top, ${colors.primary}, ${colors.secondary})`,
-              }}
-            />
-          ))}
-        </div>
+        />
       </div>
 
       {/* Speaker label */}
@@ -127,7 +125,7 @@ export const Avatar: React.FC<{
           textShadow: `0 0 10px ${colors.glow}`,
         }}
       >
-        {speakerId === 0 ? "Speaker A" : "Speaker B"}
+        {SPEAKER_NAMES[speakerId]}
       </div>
     </div>
   );
