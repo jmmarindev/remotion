@@ -55,10 +55,13 @@ La conversación no es entre dos voces abstractas: es una dialéctica fija entre
 
 ### Reglas Visuales para Avatares
 
-- Los avatares deben sentirse como caricaturas de sitcom de ciencia ficción noventera, no como blobs abstractos genéricos.
-- Leo debe anclarse visualmente al cian y Lola al magenta.
-- En composiciones horizontales deben leerse como una confrontación visual izquierda vs derecha.
-- En shorts verticales, aunque solo aparezca el activo, el color y la actitud deben dejar claro si habla Leo o Lola.
+- Los avatares usan imágenes PNG reales de Leo y Lola, ubicadas en `src/Podcats-production/assets/leo-avatar.png` y `lola-avatar.png`.
+- Cada PNG se renderiza dentro de un anillo circular con `conic-gradient` animado y glow pulsante (color del ponente): cian para Leo, magenta para Lola.
+- El avatar activo tiene `opacity: 1`, scale ligeramente aumentado y glow intenso. El inactivo tiene `opacity: 0.35` y scale reducido.
+- En composiciones horizontales deben leerse como una confrontación visual izquierda (Leo) vs derecha (Lola).
+- En shorts verticales solo aparece el avatar del ponente activo, centrado al 42% vertical con scale 1.2.
+- La etiqueta bajo el avatar debe mostrar el nombre real: **"Leo"** para `speaker_id: 0`, **"Lola"** para `speaker_id: 1`. Nunca "Speaker A" ni "Speaker B".
+- Si en un futuro episodio los presentadores cambian, los PNG correspondientes deben añadirse a `src/Podcats-production/assets/` y el Avatar.tsx debe actualizarse para mapear `speaker_id` a los nuevos archivos.
 
 ## Marco Editorial Obligatorio
 
@@ -247,6 +250,8 @@ Además, actualiza `src/Podcats-production/currentEpisode.ts` para que el episod
 
 Regla de organización: el `data.ts` y los assets temáticos deben convivir dentro del directorio del episodio. El audio final del podcast debe vivir en `public/`, idealmente en una ruta temática como `public/podcasts/<episode-slug>/audio.m4a`, y su ruta relativa debe declararse en `metadata.audio_file`.
 
+Los assets **compartidos entre episodios** (avatares de presentadores, elementos de marca) viven en `src/Podcats-production/assets/`. Actualmente contiene `leo-avatar.png` y `lola-avatar.png`. No duplicar estos archivos en carpetas de episodio concreto.
+
 ### Fase 5: Actualizar los Datos del Centro
 
 En `src/Podcats-production/KeywordHighlight.tsx`, actualiza los dos arrays:
@@ -322,13 +327,15 @@ El vídeo se compone de estas capas visuales (de fondo a frente):
 │  → Igual en YouTube, LinkedIn y TikTok                   │
 │                                                          │
 │  Layer 2: Avatar.tsx                                     │
-│  → YouTube/LinkedIn: Leo (izq) + Lola (dcha.)           │
-│    Azul (#4facfe), Rosa (#f093fb). Activo: glow+scale,  │
-│    inactivo: dim 0.35                                    │
+│  → PNG real de Leo (leo-avatar.png) o Lola               │
+│    (lola-avatar.png) renderizado dentro de un anillo    │
+│    circular con conic-gradient animado y glow pulsante. │
+│  → Assets en src/Podcats-production/assets/             │
+│  → YouTube/LinkedIn: Leo (izq, cian) + Lola (dcha,      │
+│    magenta). Activo: glow+scale, inactivo: dim 0.35     │
 │  → TikTok/Atomic: SOLO el speaker activo, centrado al   │
 │    42% vertical. Scale 1.2 cuando activo.               │
-│  → El color y la actitud del avatar deben comunicar     │
-│    inmediatamente si habla Leo o Lola                   │
+│  → Etiqueta: "Leo" (speaker_id 0) / "Lola" (speaker_id 1)│
 │                                                          │
 │  Layer 3: KeywordHighlight.tsx (CenterContent)           │
 │  → Quote Card con glassmorphism + comilla decorativa ❝   │
@@ -434,7 +441,8 @@ Antes de dar el vídeo por terminado, verificar:
 - [ ] **Audio posicionado** — archivo en `public/` y referenciado en `staticFile()`
 - [ ] **Duración correcta** — `durationInFrames` en Root.tsx = `último_end_time × fps`
 - [ ] **Contrato por bloques** — cada segmento conserva `start_time`, `end_time`, `speaker_id` y `text_content` como fuente única de sincronización
-- [ ] **Avatar activo correcto** — el speaker visible coincide con el `speaker_id` de cada bloque
+- [ ] **Avatar activo correcto** — el speaker visible coincide con el `speaker_id` de cada bloque; etiqueta muestra "Leo" o "Lola", no "Speaker A/B"
+- [ ] **Assets de avatar presentes** — `leo-avatar.png` y `lola-avatar.png` en `src/Podcats-production/assets/`
 - [ ] **Subtítulo progresivo** — `text_content` se revela mientras habla el avatar durante la duración del segmento
 - [ ] **Pilar editorial** — el episodio está clasificado dentro de uno de los 4 pilares de El Antídoto
 - [ ] **Tensión del debate** — la pieza deja clara la tesis de Leo y la fricción introducida por Lola
