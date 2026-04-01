@@ -1,5 +1,68 @@
 import React from "react";
-import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import {
+  Img,
+  interpolate,
+  spring,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+
+/* ─── Logo Center Overlay (rendered at composition level to avoid frame resets) ── */
+
+export const LogoCenterOverlay: React.FC<{
+  durationFrames: number;
+}> = ({ durationFrames }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  const entrance = spring({
+    frame: frame - 5,
+    fps,
+    config: { damping: 16, mass: 0.7 },
+  });
+  const scale = interpolate(entrance, [0, 1], [0.75, 1]);
+
+  const exitOpacity = interpolate(
+    frame,
+    [durationFrames - 12, durationFrames],
+    [1, 0],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+  );
+
+  const pulse = interpolate(Math.sin(frame * 0.05), [-1, 1], [0.97, 1.03]);
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: entrance * exitOpacity,
+        zIndex: 5,
+      }}
+    >
+      <Img
+        src={staticFile("elantidoto127_circle.png")}
+        style={{
+          width: 420,
+          height: "auto",
+          transform: `scale(${scale * pulse})`,
+          mixBlendMode: "multiply",
+          filter: [
+            "drop-shadow(0 0 60px rgba(240,147,251,0.7))",
+            "drop-shadow(0 0 120px rgba(79,172,254,0.45))",
+            "drop-shadow(0 4px 24px rgba(0,0,0,0.4))",
+          ].join(" "),
+        }}
+      />
+    </div>
+  );
+};
 
 const SPEAKER_ACCENTS = {
   0: {
@@ -99,18 +162,26 @@ export const CenterContent: React.FC<{
   durationFrames: number;
   segmentIndex: number;
   type?: "full" | "insight" | "atomic";
+  key_quote?: string;
+  fun_tags?: string[];
+  showLogo?: boolean;
+  logoInstant?: boolean;
 }> = ({
   textContent,
   speakerId,
   durationFrames,
   segmentIndex,
   type = "full",
+  key_quote,
+  fun_tags,
+  showLogo = false,
+  logoInstant = false,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const accent = SPEAKER_ACCENTS[speakerId];
-  const tags = SEGMENT_TAGS[segmentIndex] || SEGMENT_TAGS[0];
-  const quote = SEGMENT_QUOTES[segmentIndex] || "...";
+  const tags = fun_tags ?? SEGMENT_TAGS[segmentIndex] ?? SEGMENT_TAGS[0];
+  const quote = key_quote ?? SEGMENT_QUOTES[segmentIndex] ?? "...";
 
   // Exit fade
   const exitOpacity = interpolate(
@@ -119,6 +190,51 @@ export const CenterContent: React.FC<{
     [1, 0],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
   );
+
+  if (showLogo) {
+    const logoEntrance = logoInstant
+      ? 1
+      : spring({
+          frame: frame - 5,
+          fps,
+          config: { damping: 16, mass: 0.7 },
+        });
+    const logoScale = interpolate(logoEntrance, [0, 1], [0.75, 1]);
+    const logoOpacity = logoEntrance;
+
+    // Gentle floating pulse
+    const pulse = interpolate(Math.sin(frame * 0.05), [-1, 1], [0.97, 1.03]);
+
+    return (
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: exitOpacity * logoOpacity,
+          zIndex: 5,
+        }}
+      >
+        <Img
+          src={staticFile("elantidoto127_circle.png")}
+          style={{
+            width: 420,
+            height: "auto",
+            transform: `scale(${logoScale * pulse})`,
+            filter: [
+              "drop-shadow(0 0 60px rgba(240,147,251,0.7))",
+              "drop-shadow(0 0 120px rgba(79,172,254,0.45))",
+              "drop-shadow(0 4px 24px rgba(0,0,0,0.4))",
+            ].join(" "),
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div

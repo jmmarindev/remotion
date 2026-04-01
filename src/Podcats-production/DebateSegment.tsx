@@ -1,6 +1,7 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
 import type { TimelineSegment } from "./episode-schema";
+import { timeToSeconds } from "./episode-schema";
 import { AnimatedBackground } from "./AnimatedBackground";
 import { Avatar } from "./Avatar";
 import { Headline } from "./Headline";
@@ -13,6 +14,7 @@ export const DebateSegment: React.FC<{
   type?: "full" | "insight" | "atomic";
 }> = ({ segmentProps, segmentIndex, type = "full" }) => {
   const speakerId = segmentProps.speaker_id as 0 | 1;
+  const segmentStartSeconds = timeToSeconds(segmentProps.start_time);
 
   // Decide how to render Avatars based on the format
   const renderAvatars = () => {
@@ -54,14 +56,18 @@ export const DebateSegment: React.FC<{
       {/* Layer 2: Avatars */}
       {renderAvatars()}
 
-      {/* Layer 3: Quote card + fun tags in the center */}
-      <CenterContent
-        textContent={segmentProps.text_content}
-        speakerId={speakerId}
-        durationFrames={segmentProps.durationFrames}
-        segmentIndex={segmentIndex}
-        type={type}
-      />
+      {/* Layer 3: Quote card + fun tags in the center (logo segments handled at composition level) */}
+      {segmentProps.overlay_ui.center_mode !== "logo" && (
+        <CenterContent
+          textContent={segmentProps.text_content}
+          speakerId={speakerId}
+          durationFrames={segmentProps.durationFrames}
+          segmentIndex={segmentIndex}
+          type={type}
+          key_quote={segmentProps.overlay_ui.key_quote}
+          fun_tags={segmentProps.overlay_ui.fun_tags}
+        />
+      )}
 
       {/* Layer 4: Headline in the upper-center area */}
       <AbsoluteFill
@@ -84,6 +90,8 @@ export const DebateSegment: React.FC<{
         text={segmentProps.text_content}
         speakerId={speakerId}
         durationFrames={segmentProps.durationFrames}
+        words={segmentProps.words}
+        segmentStartSeconds={segmentStartSeconds}
       />
     </AbsoluteFill>
   );

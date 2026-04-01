@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1774908998374,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1774980040685,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,13 +1,13 @@\n import type { PodcastDebateData } from \"./episode-schema\";\n-import { debateData as vibeCodingEpisode } from \"./vibe-coding/assets/data\";\n+import { debateData as velocidadOCalidadEpisode } from \"./vibe-coding/assets/data\";\n \n const EPISODES = {\n-  \"vibe-coding\": vibeCodingEpisode,\n+  \"velocidad-o-calidad\": velocidadOCalidadEpisode,\n } satisfies Record<string, PodcastDebateData>;\n \n-export const ACTIVE_PODCAST_EPISODE_SLUG = \"vibe-coding\" as const;\n+export const ACTIVE_PODCAST_EPISODE_SLUG = \"velocidad-o-calidad\" as const;\n \n export const currentPodcastEpisode = {\n\\ No newline at end of file\n   slug: ACTIVE_PODCAST_EPISODE_SLUG,\n   data: EPISODES[ACTIVE_PODCAST_EPISODE_SLUG],\n-};\n+};\n"
                 }
             ],
             "date": 1774908998374,

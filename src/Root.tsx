@@ -16,15 +16,18 @@ const debateData = currentPodcastEpisode.data;
 const linkedinStartSeconds = timeToSeconds(
   debateData.metadata.distribution_targets.linkedin_start,
 );
-const linkedinEndSeconds = timeToSeconds(
-  debateData.metadata.distribution_targets.linkedin_end,
-);
+const LINKEDIN_CLIP_DURATION_S = 120; // fallback when linkedin_end is absent
+const TIKTOK_CLIP_DURATION_S = 60; // fallback when tiktok_end is absent
+
+const linkedinEndSeconds = debateData.metadata.distribution_targets.linkedin_end
+  ? timeToSeconds(debateData.metadata.distribution_targets.linkedin_end)
+  : linkedinStartSeconds + LINKEDIN_CLIP_DURATION_S;
 const tiktokStartSeconds = timeToSeconds(
   debateData.metadata.distribution_targets.tiktok_start,
 );
-const tiktokEndSeconds = timeToSeconds(
-  debateData.metadata.distribution_targets.tiktok_end,
-);
+const tiktokEndSeconds = debateData.metadata.distribution_targets.tiktok_end
+  ? timeToSeconds(debateData.metadata.distribution_targets.tiktok_end)
+  : tiktokStartSeconds + TIKTOK_CLIP_DURATION_S;
 
 const HOOK_DURATION_FPS = fps * 3; // 3 second intro hook
 

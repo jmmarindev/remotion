@@ -3,11 +3,19 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1774908998362,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1774980040704,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,16 @@\n+export interface WordTiming {\n+  text: string;\n+  start_time: number; // seconds absolute (relative to audio start)\n+  end_time: number;\n+}\n+\n export interface TimelineSegment {\n   start_time: string;\n   end_time: string;\n   speaker_id: number;\n   text_content: string;\n+  words?: WordTiming[];\n   visual_strategy?: {\n     asset_type: string;\n     freepik_api_params: {\n       query: string;\n@@ -13,17 +20,19 @@\n     asset_file: string;\n   };\n   overlay_ui: {\n     headline: string;\n+    key_quote?: string;\n+    fun_tags?: string[];\n   };\n }\n \n export interface DistributionTargets {\n   linkedin_start: string;\n-  linkedin_end: string;\n+  linkedin_end?: string;\n   linkedin_hook: string;\n   tiktok_start: string;\n-  tiktok_end: string;\n+  tiktok_end?: string;\n   tiktok_hook: string;\n   short_outro_cta: string;\n   short_outro_duration_seconds: number;\n }\n@@ -31,9 +40,9 @@\n export interface PodcastEpisodeMetadata {\n   episode_slug: string;\n   episode_title: string;\n   audio_file: string;\n-  vibe_theme: string;\n+  vibe_theme?: string;\n   channel_name?: string;\n   channel_tagline?: string;\n   editorial_pillar?: string;\n   distribution_targets: DistributionTargets;\n@@ -80,11 +89,11 @@\n export function getEpisodeDurationInFrames(\n   debateData: PodcastDebateData,\n   fps: number = 30,\n ): number {\n-  const lastSegment = debateData.timeline.at(-1);\n+  const lastSegment = debateData.timeline[debateData.timeline.length - 1];\n   if (!lastSegment) {\n     return 0;\n   }\n \n   return Math.round(timeToSeconds(lastSegment.end_time) * fps);\n\\ No newline at end of file\n-}\n+}\n"
+                },
+                {
+                    "date": 1774981088631,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,8 +22,9 @@\n   overlay_ui: {\n     headline: string;\n     key_quote?: string;\n     fun_tags?: string[];\n+    center_mode?: \"logo\" | \"default\";\n   };\n }\n \n export interface DistributionTargets {\n@@ -95,5 +96,5 @@\n     return 0;\n   }\n \n   return Math.round(timeToSeconds(lastSegment.end_time) * fps);\n-}\n\\ No newline at end of file\n+}\n"
                 }
             ],
             "date": 1774908998362,

@@ -25,37 +25,6 @@ export const AnimatedBackground: React.FC = () => {
           objectFit: "cover",
         }}
       />
-
-      {/* ── Dark overlay so foreground elements stay legible ─────── */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(0, 0, 0, 0.38)",
-        }}
-      />
-
-      {/* ── CRT scanlines ────────────────────────────────────────── */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage:
-            "repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* ── Vignette ─────────────────────────────────────────────── */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0,0,0,0.50) 100%)",
-          pointerEvents: "none",
-        }}
-      />
     </div>
   );
 };

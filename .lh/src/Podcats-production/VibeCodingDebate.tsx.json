@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1774885197210,
@@ -24,6 +24,10 @@
                 {
                     "date": 1774908998422,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,9 +7,10 @@\n   staticFile,\n   useCurrentFrame,\n   useVideoConfig,\n } from \"remotion\";\n-import { debateData, prepareSegments } from \"./vibe-coding/assets/data\";\n+import { currentPodcastEpisode } from \"./currentEpisode\";\n+import { prepareSegments } from \"./episode-schema\";\n import { DebateSegment } from \"./DebateSegment\";\n import { HookBanner } from \"./HookBanner\";\n import { OutroBanner } from \"./OutroBanner\";\n \n@@ -18,11 +19,12 @@\n   startFrame?: number;\n }> = ({ type = \"full\", startFrame = 0 }) => {\n   const frame = useCurrentFrame();\n   const { fps, durationInFrames } = useVideoConfig();\n+  const debateData = currentPodcastEpisode.data;\n \n   // Convert timestamps to frame numbers\n-  const segments = prepareSegments(fps);\n+  const segments = prepareSegments(debateData, fps);\n   const distributionTargets = debateData.metadata.distribution_targets;\n   const isShortClip = type === \"insight\" || type === \"atomic\";\n \n   // Intro Hook logic\n@@ -44,9 +46,12 @@\n     durationInFrames - contentOffsetFrames,\n     0,\n   );\n   const visualDurationFrames = isShortClip\n-    ? Math.max(audioDurationFrames - outroDurationFrames + outroOverlapFrames, 0)\n+    ? Math.max(\n+        audioDurationFrames - outroDurationFrames + outroOverlapFrames,\n+        0,\n+      )\n     : audioDurationFrames;\n   const visualOpacity = isShortClip\n     ? interpolate(\n         frame,\n@@ -84,9 +89,9 @@\n       >\n         <Sequence from={-startFrame}>\n           {/* Play the podcast audio track — continuous, uninterrupted */}\n           <Audio\n-            src={staticFile(\"Vibe_coding_frente_al_rigor_técnico.m4a\")}\n+            src={staticFile(debateData.metadata.audio_file)}\n             volume={audioVolume}\n           />\n         </Sequence>\n       </Sequence>\n"
+                },
+                {
+                    "date": 1774981425756,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,8 +11,9 @@\n import { currentPodcastEpisode } from \"./currentEpisode\";\n import { prepareSegments } from \"./episode-schema\";\n import { DebateSegment } from \"./DebateSegment\";\n import { HookBanner } from \"./HookBanner\";\n+import { LogoCenterOverlay } from \"./KeywordHighlight\";\n import { OutroBanner } from \"./OutroBanner\";\n \n export const VibeCodingDebate: React.FC<{\n   type?: \"full\" | \"insight\" | \"atomic\";\n@@ -117,8 +118,24 @@\n                   type={type}\n                 />\n               </Sequence>\n             ))}\n+\n+            {/* Logo overlay spans ALL consecutive logo-mode segments as one continuous Sequence */}\n+            {(() => {\n+              const logoSegs = segments.filter(\n+                (s) => s.overlay_ui.center_mode === \"logo\",\n+              );\n+              if (logoSegs.length === 0) return null;\n+              const logoFrom = logoSegs[0].startFrame;\n+              const logoDuration =\n+                logoSegs[logoSegs.length - 1].endFrame - logoFrom;\n+              return (\n+                <Sequence from={logoFrom} durationInFrames={logoDuration}>\n+                  <LogoCenterOverlay durationFrames={logoDuration} />\n+                </Sequence>\n+              );\n+            })()}\n           </Sequence>\n         </AbsoluteFill>\n       </Sequence>\n \n"
                 }
             ],
             "date": 1774885197210,

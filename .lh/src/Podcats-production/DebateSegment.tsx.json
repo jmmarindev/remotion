@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1774907998987,
@@ -12,6 +12,22 @@
                 {
                     "date": 1774908998369,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n import React from \"react\";\n import { AbsoluteFill } from \"remotion\";\n-import { TimelineSegment } from \"./vibe-coding/assets/data\";\n+import type { TimelineSegment } from \"./episode-schema\";\n import { AnimatedBackground } from \"./AnimatedBackground\";\n import { Avatar } from \"./Avatar\";\n import { Headline } from \"./Headline\";\n import { CenterContent } from \"./KeywordHighlight\";\n@@ -17,15 +17,32 @@\n   // Decide how to render Avatars based on the format\n   const renderAvatars = () => {\n     if (type === \"atomic\") {\n       // TikTok/Vertical: only show the active speaker, centered and larger\n-      return <Avatar speakerId={speakerId} isActive={true} side=\"center\" type={type} />;\n+      return (\n+        <Avatar\n+          speakerId={speakerId}\n+          isActive={true}\n+          side=\"center\"\n+          type={type}\n+        />\n+      );\n     }\n     // YouTube / LinkedIn: show both on left/right\n     return (\n       <>\n-        <Avatar speakerId={0} isActive={speakerId === 0} side=\"left\" type={type} />\n-        <Avatar speakerId={1} isActive={speakerId === 1} side=\"right\" type={type} />\n+        <Avatar\n+          speakerId={0}\n+          isActive={speakerId === 0}\n+          side=\"left\"\n+          type={type}\n+        />\n+        <Avatar\n+          speakerId={1}\n+          isActive={speakerId === 1}\n+          side=\"right\"\n+          type={type}\n+        />\n       </>\n     );\n   };\n \n"
+                },
+                {
+                    "date": 1774980040684,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,8 @@\n import React from \"react\";\n import { AbsoluteFill } from \"remotion\";\n import type { TimelineSegment } from \"./episode-schema\";\n+import { timeToSeconds } from \"./episode-schema\";\n import { AnimatedBackground } from \"./AnimatedBackground\";\n import { Avatar } from \"./Avatar\";\n import { Headline } from \"./Headline\";\n import { CenterContent } from \"./KeywordHighlight\";\n@@ -12,8 +13,9 @@\n   segmentIndex: number;\n   type?: \"full\" | \"insight\" | \"atomic\";\n }> = ({ segmentProps, segmentIndex, type = \"full\" }) => {\n   const speakerId = segmentProps.speaker_id as 0 | 1;\n+  const segmentStartSeconds = timeToSeconds(segmentProps.start_time);\n \n   // Decide how to render Avatars based on the format\n   const renderAvatars = () => {\n     if (type === \"atomic\") {\n@@ -83,8 +85,10 @@\n       <Subtitle\n         text={segmentProps.text_content}\n         speakerId={speakerId}\n         durationFrames={segmentProps.durationFrames}\n+        words={segmentProps.words}\n+        segmentStartSeconds={segmentStartSeconds}\n       />\n     </AbsoluteFill>\n   );\n };\n"
+                },
+                {
+                    "date": 1774981088629,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -62,8 +62,11 @@\n         speakerId={speakerId}\n         durationFrames={segmentProps.durationFrames}\n         segmentIndex={segmentIndex}\n         type={type}\n+        key_quote={segmentProps.overlay_ui.key_quote}\n+        fun_tags={segmentProps.overlay_ui.fun_tags}\n+        showLogo={segmentProps.overlay_ui.center_mode === \"logo\"}\n       />\n \n       {/* Layer 4: Headline in the upper-center area */}\n       <AbsoluteFill\n"
+                },
+                {
+                    "date": 1774981188882,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -65,8 +65,11 @@\n         type={type}\n         key_quote={segmentProps.overlay_ui.key_quote}\n         fun_tags={segmentProps.overlay_ui.fun_tags}\n         showLogo={segmentProps.overlay_ui.center_mode === \"logo\"}\n+        logoInstant={\n+          segmentProps.overlay_ui.center_mode === \"logo\" && segmentIndex > 0\n+        }\n       />\n \n       {/* Layer 4: Headline in the upper-center area */}\n       <AbsoluteFill\n"
+                },
+                {
+                    "date": 1774981425672,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -55,22 +55,20 @@\n \n       {/* Layer 2: Avatars */}\n       {renderAvatars()}\n \n-      {/* Layer 3: Quote card + fun tags in the center */}\n-      <CenterContent\n-        textContent={segmentProps.text_content}\n-        speakerId={speakerId}\n-        durationFrames={segmentProps.durationFrames}\n-        segmentIndex={segmentIndex}\n-        type={type}\n-        key_quote={segmentProps.overlay_ui.key_quote}\n-        fun_tags={segmentProps.overlay_ui.fun_tags}\n-        showLogo={segmentProps.overlay_ui.center_mode === \"logo\"}\n-        logoInstant={\n-          segmentProps.overlay_ui.center_mode === \"logo\" && segmentIndex > 0\n-        }\n-      />\n+      {/* Layer 3: Quote card + fun tags in the center (logo segments handled at composition level) */}\n+      {segmentProps.overlay_ui.center_mode !== \"logo\" && (\n+        <CenterContent\n+          textContent={segmentProps.text_content}\n+          speakerId={speakerId}\n+          durationFrames={segmentProps.durationFrames}\n+          segmentIndex={segmentIndex}\n+          type={type}\n+          key_quote={segmentProps.overlay_ui.key_quote}\n+          fun_tags={segmentProps.overlay_ui.fun_tags}\n+        />\n+      )}\n \n       {/* Layer 4: Headline in the upper-center area */}\n       <AbsoluteFill\n         style={{\n"
                 }
             ],
             "date": 1774907998987,

@@ -92,49 +92,227 @@ Antes de generar hooks, headlines o tags, clasifica el episodio dentro de uno de
 
 ## Inputs Requeridos
 
-Antes de empezar, necesitas exactamente **2 archivos**:
+Hay tres modos de entrada según lo que tengas disponible:
 
-1. **Transcripción** (`.txt` / `.srt`): Archivo con marcas de tiempo y texto por segmento. Formato esperado:
+### Modo A — ElevenLabs JSON + MP3 (preferido, máxima precisión) ✅
 
-   ```
-   00:00:00,220 --> 00:00:15,559
-   Speaker 0: Bienvenidos al debate...
+Cuando el audio se genera con ElevenLabs, el pipeline exporta un archivo `.mp3.json` con **timestamps por palabra individual** para cada segmento y speaker. Es la fuente más rica disponible: da timecodes precisos, texto completo y sincronización palabra a palabra sin necesidad de Whisper ni parseo de AAF.
 
-   00:00:15,560 --> 00:00:31,660
-   Speaker 1: Exacto. Y para contextualizar...
-   ```
+1. **JSON de transcripción** (`<audio>.mp3.json`): Archivo exportado por ElevenLabs junto al audio. Contiene `segments[]` con `speaker.id`, `start_time`, `end_time`, `text` y `words[]` (con `start_time`/`end_time` por palabra). Mover a `src/Podcats-production/<episode-slug>/assets/` para su procesamiento.
+2. **Audio** (`.mp3`): El mix final del podcast. Mover ambos archivos a la misma carpeta de assets. El audio se copia también a `public/podcasts/<episode-slug>/audio.mp3`.
 
-2. **Audio** (`.m4a` / `.mp3` / `.wav`): El archivo de audio final del podcast, ya generado por otra IA o pipeline externo. Se coloca en `public/` para que Remotion lo sirva vía `staticFile()`.
+Con estos dos archivos se ejecuta **Fase 0** (ver abajo): el script `scripts/gen-data-ts.py` genera el `data.ts` completo en segundos.
+
+**Formato del JSON de ElevenLabs:**
+
+```json
+{
+  "language_code": "es",
+  "segments": [
+    {
+      "text": "Soy Leo y bienvenidos...",
+      "start_time": 0.0,
+      "end_time": 5.303,
+      "speaker": { "id": "speaker_0" },
+      "words": [
+        { "text": "Soy", "start_time": 0.0, "end_time": 0.3 },
+        { "text": "Leo", "start_time": 0.3, "end_time": 0.6 }
+      ]
+    }
+  ]
+}
+```
+
+Mapeo de IDs: `speaker_0` → Leo (`speaker_id: 0`), `speaker_1` → Lola (`speaker_id: 1`).
+
+### Modo B — AAF + MP3 (alternativo, sin JSON disponible)
+
+Si el pipeline no exportó `.mp3.json` pero sí un archivo `.aaf` de ElevenLabs, este contiene las **pistas separadas por speaker** con timecodes a nivel de muestra (44100 Hz). Solo da timecodes, no texto — requiere alinear con Whisper manualmente.
+
+1. **Timeline** (`.aaf`): `CompositionMob` con una pista por voice ID. Mapeo voice-ID → Leo/Lola se confirma con el usuario.
+2. **Audio** (`.mp3`): El mix final. Se coloca en `public/podcasts/<episode-slug>/audio.mp3`.
+
+Con estos archivos se usa `scripts/parse-aaf-full.py` para extraer timecodes y luego se alinea con Whisper. Ver sección **Fase 0 (Modo B)** abajo.
+
+### Modo C — Transcripción manual + Audio (fallback de emergencia)
+
+Si no hay JSON ni AAF, se acepta una transcripción manual con marcas de tiempo:
+
+```
+00:00:00,220 --> 00:00:15,559
+Speaker 0: Bienvenidos al debate...
+
+00:00:15,560 --> 00:00:31,660
+Speaker 1: Exacto. Y para contextualizar...
+```
+
+No habrá sincronización palabra a palabra — el subtítulo usará revelación lineal interpolada (Modo B del componente `Subtitle.tsx`).
 
 ### Alcance del Agente
 
-- Sí: parsear transcripción, estructurar segmentos, diseñar visuales, sincronizar audio y vídeo, preparar formatos de distribución y montar composiciones en Remotion.
-- No: generar el audio original del podcast, clonar voces, reescribir el debate completo desde cero o sustituir la IA encargada del audio.
+- Sí: parsear JSON/AAF, extraer timecodes por speaker, estructurar segmentos, generar `data.ts`, diseñar visuales, sincronizar audio y vídeo, preparar formatos de distribución y montar composiciones en Remotion.
+- No: generar el audio original del podcast, clonar voces, reescribir el debate desde cero o sustituir la IA encargada del audio.
 
 ## Contrato de Sincronización Base
 
-La transcripción ya entrega la unidad fundamental del montaje: **bloques por ponente** con `start_time`, `end_time`, `speaker_id` y `text_content`.
+La unidad fundamental del montaje es el **bloque por ponente**: `start_time`, `end_time`, `speaker_id`, `text_content` y (cuando viene del JSON ElevenLabs) `words[]`. Cuando hay JSON disponible, todos estos datos vienen directamente del archivo `.mp3.json`; cuando no, de AAF + Whisper o de transcripción manual.
 
 - Cada bloque representa un turno de palabra completo de Leo o Lola.
 - El vídeo se construye encadenando esos bloques en posiciones absolutas sobre la timeline.
-- Durante cada bloque, el avatar activo debe corresponder exactamente al `speaker_id` del segmento.
-- Durante ese mismo bloque, el subtítulo debe mostrarse usando `text_content` y revelarse progresivamente mientras habla el avatar.
-- No hacen falta timestamps palabra por palabra: con una transcripción por bloques, la aparición de palabras se distribuye a lo largo de la duración del segmento.
-- La sincronización base debe seguir esta lógica: `speaker_id` decide quién habla, `start_time` y `end_time` deciden cuándo aparece el segmento, y `text_content` alimenta tanto subtítulos como capas editoriales del bloque.
+- **Avatar**: durante cada bloque, el avatar activo es el del `speaker_id`. El otro queda en `opacity: 0.35`, sin glow, sin scale. El cambio de activo/inactivo debe ser instantáneo en el frame exacto de `startFrame` del segmento.
+- **Subtítulo (dialog box)**: el `text_content` del bloque alimenta `<Subtitle>`. El componente Opera en dos modos:
+  - **Modo A (words[] disponibles)**: cada palabra se revela cuando su `word.start_time` alcanza el frame actual (`word.start_time <= frame/fps + segmentStartSeconds`). Sincronización perfecta con el audio.
+  - **Modo B (fallback lineal)**: si no hay `words[]`, las palabras se revelan con interpolación lineal desde frame 10 hasta el 85% de `durationFrames`. Margen ±100ms aceptable.
+- **Precisión de timecodes**: cuando vienen del JSON ElevenLabs (float seconds), la sincronización es exacta a nivel de palabra. Cuando vienen del AAF (44100 Hz sample-accurate), la sincronización de segmento es perfecta pero se necesita Whisper para el texto. Cuando vienen de transcripción manual, ±100ms de margen — aceptable.
+- **Gaps entre speakers**: los gaps de decenas de milisegundos entre turnos son normales. En esos frames Remotion no muestra subtítulo activo ni avatar activo — ambos en estado idle. No hay que rellenarlos artificialmente.
+- La sincronización sigue esta lógica siempre: `speaker_id` → quién está activo visualmente; `start_time`/`end_time` → cuándo; `text_content` + `words[]` → qué se revela y cómo en el dialog box.
 
 ---
 
-## Proceso de Producción (5 Fases)
+## Proceso de Producción (6 Fases)
+
+### Fase 0: Generación de `data.ts` desde ElevenLabs JSON (Modo A — flujo estándar)
+
+Esta fase convierte el `.mp3.json` de ElevenLabs en el `data.ts` completo del episodio. El script `scripts/gen-data-ts.py` ya existe en el proyecto y hace todo el trabajo pesado.
+
+#### 1. Verificar que los archivos están en su lugar
+
+```
+src/Podcats-production/<episode-slug>/assets/
+  ├── <audio>.mp3.json   ← transcripción con words[] de ElevenLabs
+  └── (el MP3 se mueve a public/)
+
+public/podcasts/<episode-slug>/
+  └── audio.mp3          ← audio final del podcast
+```
+
+#### 2. Ajustar el script gen-data-ts.py
+
+El script `scripts/gen-data-ts.py` lee el JSON y genera `data.ts` con todos los segmentos, palabras y timecodes. Hay que ajustar las constantes en la cabecera del script para cada nuevo episodio:
+
+```python
+# --- Configuración del episodio ---
+JSON_PATH  = "src/Podcats-production/vibe-coding/assets/ElevenLabs_<nombre>.mp3.json"
+OUT_PATH   = "src/Podcats-production/vibe-coding/assets/data.ts"
+EPISODE_SLUG  = "velocidad-o-calidad"
+AUDIO_FILE    = "podcasts/velocidad-o-calidad/audio.mp3"
+EPISODE_TITLE = "¿Velocidad o Calidad? El Dilema de la Innovación Actual"
+
+# Mapeo de IDs de speaker del JSON → speaker_id numérico del sistema
+SPEAKER_MAP = {
+    "speaker_0": 0,  # Leo
+    "speaker_1": 1,  # Lola
+}
+
+# Contenido editorial por segmento (debe editarse manualmente)
+EDITORIAL = [
+    # (headline, key_quote, fun_tags)
+    ("Velocidad vs Calidad",  "La velocidad sin criterio no es innovación, es ruido con prisa.", ["🚀 Sprint mode", "💣 Deuda técnica"]),
+    # ... uno por cada segmento del JSON
+]
+```
+
+#### 3. Ejecutar el script
+
+```bash
+python3 scripts/gen-data-ts.py
+# → "Written N segments to src/.../data.ts, Total duration: HH:MM:SS,mmm"
+```
+
+El script genera automáticamente:
+
+- `metadata`: `episode_slug`, `audio_file`, `channel_name`, `editorial_pillar`, `distribution_targets`
+- `debateData.timeline[]`: todos los segmentos con `start_time`, `end_time`, `speaker_id`, `text_content`, `overlay_ui` y `words[]`
+
+#### 4. Completar el contenido editorial
+
+El array `EDITORIAL` del script debe rellenarse manualmente con `headline`, `key_quote` y `fun_tags` para cada segmento (ver Fase 2 para las reglas de creación de cada campo). Solo después de rellenarlo, volver a ejecutar el script para regenerar `data.ts`.
+
+#### 5. Salida esperada de Fase 0
+
+Un `data.ts` completamente tipado con 25+ segmentos, listo para importar en `currentEpisode.ts`. Cada entrada incluye:
+
+```typescript
+{
+  start_time: "00:00:00,000",
+  end_time: "00:00:05,303",
+  speaker_id: 1,
+  text_content: "Y yo soy Lola...",
+  overlay_ui: {
+    headline: "Velocidad vs Calidad",
+    key_quote: "La velocidad sin criterio no es innovación, es ruido con prisa.",
+    fun_tags: ["🚀 Sprint mode", "💣 Deuda técnica"],
+  },
+  words: [
+    { text: "Y", start_time: 0.0, end_time: 0.08 },
+    { text: "yo", start_time: 0.08, end_time: 0.19 },
+    // ...
+  ],
+}
+```
+
+**Regla de huecos**: entre `end_time` de un segmento y `start_time` del siguiente puede haber un gap de milisegundos. Es normal — Remotion usa posicionamiento absoluto, los gaps se muestran como pantalla sin subtítulo activo.
+
+---
+
+### Fase 0 (Modo B): Extracción de Timecodes desde AAF (sin JSON disponible)
+
+Solo usar si no existe el `.mp3.json`. El script `scripts/parse-aaf-full.py` implementa los pasos 1-3.
+
+#### 1. Parsear el AAF con pyaaf2
+
+```python
+import aaf2
+
+with aaf2.open("episodio.aaf", "r") as f:
+    comp = next(m for m in f.content.mobs if m.__class__.__name__ == "CompositionMob")
+    for slot in comp.slots:
+        cursor = 0
+        for c in slot.segment.components:
+            if c.__class__.__name__ == "SourceClip":
+                start_s = cursor / 44100
+                end_s   = (cursor + c.length) / 44100
+                # → segmento activo del speaker de esta pista
+            cursor += c.length
+```
+
+Los **Filler** son silencios, los **SourceClip** son voz activa. La posición `cursor` da el timecode absoluto en el audio final.
+
+#### 2. Mapear voice IDs a Leo/Lola y generar timecodes
+
+```python
+VOICE_TO_SPEAKER = {
+    "Track tts_BXtvkfRgOYGPQKVRgufE": 0,  # Leo
+    "Track tts_qUPtETgSYRhCRb2pfOla": 1,  # Lola
+}
+
+def samples_to_tc(samples, sr=44100):
+    s = samples / sr
+    h, m = int(s // 3600), int((s % 3600) // 60)
+    sec, ms = int(s % 60), int(round((s % 1) * 1000))
+    return f"{h:02}:{m:02}:{sec:02},{ms:03}"
+```
+
+#### 3. Transcribir texto con Whisper y alinear
+
+```bash
+whisper audio.mp3 --language es --word_timestamps True --output_format json
+```
+
+Mapear cada segmento AAF a las palabras de Whisper en su ventana `[start_s, end_s]`. **No habrá `words[]` individuales de precisión** — el subtítulo usará el Modo B (revelación lineal). Generar `data.ts` manualmente a partir del resultado.
+
+---
 
 ### Fase 1: Análisis de la Transcripción
 
-1. Lee la transcripción completa.
-2. Identifica cada segmento temporal con su `start_time`, `end_time`, `speaker_id` y `text_content`.
-3. Verifica que **no hay huecos temporales** — cada segmento debe terminar exactamente donde empieza el siguiente.
-4. Calcula la duración total del vídeo: `último_end_time × fps`.
-5. Clasifica el episodio dentro de uno de los 4 pilares editoriales de El Antídoto.
-6. Define la tensión principal del debate en una frase corta: qué defiende Leo, qué cuestiona Lola, y por qué importa.
-7. Verifica que cada bloque puede funcionar como unidad de sincronización completa: avatar activo, subtítulo progresivo y capas editoriales deben derivarse del mismo segmento.
+1. Si vienes de Fase 0 Modo A (JSON), ya tienes todos los segmentos con `start_time`, `end_time`, `speaker_id`, `text_content` y `words[]`. Validar que el `data.ts` generado tiene el número de segmentos correcto y que la duración total es coherente.
+2. Si vienes de Fase 0 Modo B (AAF), ya tienes los segmentos con `start_time`, `end_time` y `speaker_id`. Solo falta validar que el `text_content` está alineado correctamente con Whisper.
+3. Si vienes de Modo C (transcripción manual), parsea el archivo e identifica `start_time`, `end_time`, `speaker_id` y `text_content` de cada bloque. No habrá `words[]`.
+4. Verifica que **no hay solapamientos** entre segmentos del mismo speaker. Los gaps entre speakers son normales (silencio, turno de cambio).
+5. Calcula la duración total del vídeo: `último_end_time × fps`. Confirmar que coincide con `durationInFrames` en `Root.tsx`.
+6. Clasifica el episodio dentro de uno de los 4 pilares editoriales de El Antídoto.
+7. Define la tensión principal del debate en una frase corta: qué defiende Leo, qué cuestiona Lola, y por qué importa.
+8. Verifica que cada bloque puede funcionar como unidad de sincronización completa: avatar activo, subtítulo progresivo y capas editoriales deben derivarse del mismo segmento.
 
 ### Fase 2: Contenido Creativo por Segmento
 
@@ -218,23 +396,29 @@ El archivo `data.ts` que generarás debe contener un objeto `metadata` que marqu
 
 Cada episodio o tema debe vivir en su propia carpeta dentro de `src/Podcats-production/`, junto con su carpeta `assets/`.
 
-Primero define o recibe un `episode_slug` estable, por ejemplo `vibe-coding` o `solo-founders`.
+Primero define o recibe un `episode_slug` estable, por ejemplo `vibe-coding` o `velocidad-o-calidad`.
 
-Después crea el archivo `src/Podcats-production/<episode-slug>/assets/data.ts` con esta estructura exacta.
+**Con Modo A (JSON ElevenLabs)**: ejecutar `python3 scripts/gen-data-ts.py` después de rellenar el array `EDITORIAL` del script. El archivo se genera completamente — no escribirlo a mano.
+
+**Con Modo B/C**: crear `src/Podcats-production/<episode-slug>/assets/data.ts` manualmente con esta estructura exacta:
 
 ```typescript
 export const metadata = {
-  episode_slug: "vibe-coding",
+  episode_slug: "velocidad-o-calidad",
   channel_name: "El Antídoto",
   channel_tagline: "Tu píldora contra la pereza intelectual.",
-  audio_file: "podcasts/vibe-coding/audio.m4a",
+  audio_file: "podcasts/velocidad-o-calidad/audio.mp3",
   editorial_pillar: "Economía del Software y la IA",
   distribution_targets: {
-    linkedin_start: "00:03:15,000", // Start time del Insight Clip (~120s)
-    linkedin_hook: "¿Te has preguntado por qué X importa tanto?",
-    tiktok_start: "00:01:20,500", // Start time del Atomic Clip (~60s)
-    tiktok_hook: "¡Alerta! Descubre por qué X está muriendo...",
-    short_outro_cta: "Ve a nuestro canal para ver el debate completo.",
+    linkedin_start: "00:02:05,485",
+    linkedin_hook:
+      "¿Velocidad o calidad? La pregunta que define si tu producto dura.",
+    linkedin_end: "00:04:05,485", // opcional — si no existe, usar linkedin_start
+    tiktok_start: "00:01:05,397",
+    tiktok_hook:
+      "⚡ Lanzar rápido o construir bien — solo hay una respuesta correcta",
+    tiktok_end: "00:02:05,397", // opcional — si no existe, usar tiktok_start
+    short_outro_cta: "Debate completo en El Antídoto. Link en bio.",
     short_outro_duration_seconds: 5,
   },
 };
@@ -242,45 +426,87 @@ export const metadata = {
 export const debateData = {
   timeline: [
     {
-      start_time: "00:01:35,440",
-      end_time: "00:01:50,900",
-      speaker_id: 0,
-      text_content: "Texto hablado completo",
+      start_time: "00:00:00,000",
+      end_time: "00:00:05,303",
+      speaker_id: 1 as 0 | 1,
+      text_content: "Y yo soy Lola, y juntos vamos a...",
       overlay_ui: {
-        headline: "Título corto animado",
+        headline: "Velocidad vs Calidad", // 2-4 palabras, OBLIGATORIO
+        key_quote: "La velocidad sin criterio es ruido con prisa.", // opcional
+        fun_tags: ["🚀 Sprint mode", "💣 Deuda técnica"], // opcional
       },
+      words: [
+        // de JSON ElevenLabs
+        { text: "Y", start_time: 0.0, end_time: 0.08 },
+        { text: "yo", start_time: 0.08, end_time: 0.19 },
+        // ... (omitir si no hay JSON)
+      ],
     },
   ],
 };
 ```
 
-Además, actualiza `src/Podcats-production/currentEpisode.ts` para que el episodio activo apunte al nuevo `episode_slug`. La regla es que cambiar de tema no debe requerir tocar imports repartidos por varios componentes: solo el `data.ts` del episodio y la selección del episodio activo.
+#### Interfaces TypeScript (episode-schema.ts)
 
-`visual_strategy` es una propiedad legacy de la etapa en la que el flujo dependía de Freepik. En nuevas generaciones del `data.ts` no es obligatoria y no debe incluirse salvo que exista una necesidad explícita de compatibilidad con herramientas antiguas.
+El esquema de tipos vive en `src/Podcats-production/episode-schema.ts`. Los campos relevantes son:
 
-Regla de organización: el `data.ts` y los assets temáticos deben convivir dentro del directorio del episodio. El audio final del podcast debe vivir en `public/`, idealmente en una ruta temática como `public/podcasts/<episode-slug>/audio.m4a`, y su ruta relativa debe declararse en `metadata.audio_file`.
+```typescript
+export interface WordTiming {
+  text: string;
+  start_time: number; // segundos absolutos en el audio
+  end_time: number;
+}
 
-Los assets **compartidos entre episodios** (avatares de presentadores, elementos de marca) viven en `src/Podcats-production/assets/`. Actualmente contiene `leo-avatar.png` y `lola-avatar.png`. No duplicar estos archivos en carpetas de episodio concreto.
+export interface TimelineSegment {
+  start_time: string; // "HH:MM:SS,mmm"
+  end_time: string;
+  speaker_id: 0 | 1;
+  text_content: string;
+  overlay_ui: {
+    headline: string;
+    key_quote?: string;
+    fun_tags?: string[];
+  };
+  words?: WordTiming[]; // presente cuando viene del JSON ElevenLabs
+}
+```
+
+Los campos `vibe_theme`, `linkedin_end` y `tiktok_end` son opcionales. En `Root.tsx` usar fallback: `linkedin_end ?? linkedin_start`.
+
+Además, actualiza `src/Podcats-production/currentEpisode.ts` para que el episodio activo apunte al nuevo slug:
+
+```typescript
+import { debateData as episodioEpisode } from "./<episode-slug>/assets/data";
+
+const EPISODES = {
+  "<episode-slug>": episodioEpisode,
+};
+export const ACTIVE_PODCAST_EPISODE_SLUG = "<episode-slug>" as const;
+```
+
+Cambiar de episodio activo solo requiere tocar `currentEpisode.ts`.
+
+`visual_strategy` es una propiedad legacy. No incluirla en nuevos `data.ts`.
+
+Regla de organización: el `data.ts` y los assets temáticos conviven en el directorio del episodio. El audio vive en `public/podcasts/<episode-slug>/audio.mp3`. Los assets compartidos (avatares) permanecen en `src/Podcats-production/assets/`.
 
 ### Fase 5: Actualizar los Datos del Centro
 
-En `src/Podcats-production/KeywordHighlight.tsx`, actualiza los dos arrays:
+`KeywordHighlight.tsx` recibe la `key_quote` y los `fun_tags` directamente desde `overlay_ui` del segmento activo en `data.ts`. **No hay arrays hardcodeados en el componente** — la fuente única de verdad es el `data.ts`.
 
-```typescript
-// Array de quotes curadas — UNA por segmento, en orden
-const SEGMENT_QUOTES: string[] = [
-  /* 0  */ "Quote curada del segmento 0",
-  /* 1  */ "Quote curada del segmento 1",
-  // ... uno por cada segmento
-];
+Si en un episodio anterior existían los arrays `SEGMENT_QUOTES` o `SEGMENT_TAGS` hardcodeados en `KeywordHighlight.tsx`, deben eliminarse. El componente recibe los datos como props:
 
-// Array de fun tags — lista de tags por segmento
-const SEGMENT_TAGS: string[][] = [
-  /* 0  */ ["🔥 Tag Divertido", "📊 Otro Tag"],
-  /* 1  */ ["🤖 Tag con Emoji"],
-  // ... uno por cada segmento
-];
+```tsx
+// ✅ Correcto: KeywordHighlight recibe quote y tags de overlay_ui
+<KeywordHighlight
+  quote={segment.overlay_ui.key_quote}
+  tags={segment.overlay_ui.fun_tags ?? []}
+  speakerId={segment.speaker_id}
+  frame={frame}
+/>
 ```
+
+Si por razones de compatibilidad el componente todavía lee de arrays locales, migrar las quotes y tags al `overlay_ui` de cada segmento en `data.ts` y actualizar el componente para leerlos desde props.
 
 ### Fase 5: Registrar la Composición
 
@@ -331,7 +557,11 @@ El vídeo se compone de estas capas visuales (de fondo a frente):
 │                                                          │
 │  Layer 1: AnimatedBackground.tsx  ← CONTINUO, SIN CORTES│
 │  → Vídeo MP4 en bucle (`loop muted`) vía `<Video>` de   │
-│    @remotion/media. Asset en public/cityscape-neon.mp4. │
+│    remotion. Asset: public/background.mp4               │
+│  → La ruta se lee de STUDIO_ASSETS.backgroundVideo en   │
+│    src/Podcats-production/studioAssets.ts. Para cambiar │
+│    el fondo: copiar nuevo MP4 a public/ y actualizar    │
+│    ese único campo — nada más cambia.                   │
 │  → objectFit: cover — cubre el canvas sin barras.       │
 │  → Overlay oscuro rgba(0,0,0,0.38) para legibilidad.    │
 │  → Scanlines CRT sutiles + viñeta perimetral encima.    │
@@ -364,8 +594,15 @@ El vídeo se compone de estas capas visuales (de fondo a frente):
 │    con el avatar en formato vertical TikTok              │
 │                                                          │
 │  Layer 5: Subtitle.tsx (abajo)                           │
-│  → Palabra por palabra, glassmorphism, borde del color   │
-│    del ponente activo, palabra nueva highlighted          │
+│  → Dialog box generado con SVG inline programático       │
+│    (DialogBoxSVG) — se adapta 100% al texto, sin SVGs   │
+│    estáticos externos.                                   │
+│  → Panel angular HUD con esquinas cortadas, speed-lines  │
+│    diagonales en la parte superior (lado del speaker).   │
+│  → Fondo: gradiente del color del speaker (fill).       │
+│  → Borde neón del accent color del speaker.             │
+│  → Palabra por palabra, monospace, palabra nueva         │
+│    highlighted con glow neón.                            │
 │  → Usa `text_content` del bloque activo y se revela      │
 │    progresivamente durante la duración del segmento      │
 └──────────────────────────────────────────────────────────┘
@@ -470,12 +707,35 @@ El sistema visual apunta a sci-fi retro-futurista de los 90: neón sobre oscuro,
 - `textShadow: "0 0 10px ${accent.glow}"` — etiqueta con aura de color del speaker.
 - Background más opaco: `${accent.color}33 → ${accent.color}66`.
 
-### Subtitle.tsx
+### Subtitle.tsx — Dialog Box Programático
 
-- `fontFamily: '"Courier New", "JetBrains Mono", monospace'` — terminal feel.
-- `backdropFilter: "blur(8px)"` — mínimo blur, visual más limpio sobre el video.
-- `backgroundColor: "rgba(4,7,18,0.82)"` — más opaco para legibilidad.
-- Palabra nueva: `textShadow: "0 0 12px ${borderColor}, 0 0 24px ${borderColor}66"` — glow de neón; `fontWeight: 700`, `color: borderColor`.
+**Arquitectura:** El fondo del subtítulo NO usa SVGs estáticos ni `backdropFilter` glassmorphism. Usa un componente `DialogBoxSVG` inline que genera la forma del panel en tiempo de render, adaptándose al 100% del contenedor de texto.
+
+- **SPEAKER_THEME**: objeto `Record<0|1, {fill, accent, accentSecondary, glow}>` que define los colores por speaker.
+  - Leo (0): fill `#0D1282`, accent `#4facfe`, accentSecondary `#00f2fe`.
+  - Lola (1): fill `#4a0e6e`, accent `#f093fb`, accentSecondary `#f5576c`.
+- **DialogBoxSVG** — componente React interno, props: `{fill, accent, accentSecondary, side}`.
+  - `viewBox="0 0 1000 1000"` + `preserveAspectRatio="none"` → se estira para cubrir el contenedor.
+  - Polígono principal: panel angular con 8 esquinas cortadas (`40,0 960,0 1000,40 ... 0,40`).
+  - Relleno: `linearGradient` del `fill` color al 85% de opacidad.
+  - Borde: stroke del `accent` color, `strokeWidth: 2.5`, `opacity: 0.6`.
+  - Speed lines: 6 barras diagonales en la parte superior, posicionadas en el lado del speaker (`isLeft`). Color `accentSecondary`, opacity 0.7.
+  - Borde interior sutil: `rgba(255,255,255,0.06)`, `scale(0.985)`.
+  - NO tiene barra lateral, muesca ni decoraciones en el borde inferior — se deforman con `preserveAspectRatio="none"`.
+- **Props del componente `<Subtitle>`**:
+  - `text: string` — texto completo del segmento.
+  - `speakerId: 0 | 1` — determina tema visual.
+  - `durationFrames: number` — duración del segmento.
+  - `words?: WordTiming[]` — array de timings por palabra del JSON ElevenLabs.
+  - `segmentStartSeconds?: number` — `start_time` del segmento en segundos absolutos.
+- **Modo A (words[] disponibles)**: cada palabra se revela cuando `word.start_time <= (frame/fps + segmentStartSeconds)`. `DebateSegment.tsx` debe calcular `segmentStartSeconds = timeToSeconds(segment.start_time)` y pasarlo junto con `segment.words`.
+- **Modo B (fallback lineal)**: si `words` es undefined, `interpolate(frame, [10, revealEnd], [0, totalWords])` para revelar linealmente. `revealEnd = Math.floor(durationFrames * 0.85)`.
+- **Texto**: `fontFamily: '"Courier New", "JetBrains Mono", monospace'` — terminal feel.
+- **Contenedor**: `position: relative, zIndex: 1, padding: "36px 80px", minHeight: 180`.
+- **Drop-shadow exterior**: `filter: drop-shadow(0 0 22px ${glow}) drop-shadow(0 10px 40px rgba(0,0,0,0.7))`.
+- **Palabra nueva**: `textShadow: "0 0 12px ${accent}, 0 0 24px ${accent}66"`, `fontWeight: 700`, `color: accent`.
+- **Animación**: spring de entrada (`translateY` 40→0), fade de salida en los últimos 10 frames.
+- **Regla crítica**: NUNCA usar archivos SVG externos (`<Img src={staticFile(...)}>`) para el dialog box — no se adaptan al texto y se deforman. Siempre generar el SVG inline.
 
 ### HookBanner.tsx
 
@@ -496,23 +756,27 @@ El sistema visual apunta a sci-fi retro-futurista de los 90: neón sobre oscuro,
 
 Antes de dar el vídeo por terminado, verificar:
 
-- [ ] **Sin huecos temporales** — cada `end_time` = siguiente `start_time`
-- [ ] **Audio posicionado** — archivo en `public/` y referenciado en `staticFile()`
-- [ ] **Duración correcta** — `durationInFrames` en Root.tsx = `último_end_time × fps`
-- [ ] **Contrato por bloques** — cada segmento conserva `start_time`, `end_time`, `speaker_id` y `text_content` como fuente única de sincronización
+- [ ] **Fuente de timecodes** — JSON ElevenLabs procesado con `scripts/gen-data-ts.py` (Modo A), AAF con `scripts/parse-aaf-full.py` (Modo B) o transcripción manual validada (Modo C)
+- [ ] **Mapeo de speakers confirmado** — `speaker_0` → Leo (0, cian) / `speaker_1` → Lola (1, magenta)
+- [ ] **Sin solapamientos** — ningún par de segmentos del mismo speaker se superpone en la timeline
+- [ ] **Gaps aceptados** — gaps de ms entre speakers son normales; no rellenar artificialmente
+- [ ] **Audio posicionado** — archivo en `public/podcasts/<slug>/audio.mp3` y referenciado en `metadata.audio_file`
+- [ ] **Duración correcta** — `durationInFrames` en Root.tsx = `último_end_time × fps` (usar `Math.round`)
+- [ ] **words[] presentes** — cada segmento tiene su array `words[]` con timecodes absolutos (Modo A); sin ellos el subtítulo usa fallback lineal
+- [ ] **segmentStartSeconds pasado** — `DebateSegment.tsx` calcula `timeToSeconds(segment.start_time)` y lo pasa a `<Subtitle segmentStartSeconds={...}>`
+- [ ] **Contrato por bloques** — cada segmento conserva `start_time`, `end_time`, `speaker_id`, `text_content` y `words[]` como fuente única de sincronización
 - [ ] **Avatar activo correcto** — el speaker visible coincide con el `speaker_id` de cada bloque; etiqueta muestra "Leo" o "Lola", no "Speaker A/B"
-- [ ] **Assets de avatar presentes** — `leo-avatar.png` y `lola-avatar.png` en `src/Podcats-production/assets/`
-- [ ] **Subtítulo progresivo** — `text_content` se revela mientras habla el avatar durante la duración del segmento
+- [ ] **Assets de avatar presentes** — `leo-avatar.png` y `lola-avatar.png` en `src/Podcats-production/assets/` y en `public/`
+- [ ] **overlay_ui completo** — cada segmento tiene `headline` (obligatorio), `key_quote` y `fun_tags` (opcionales pero recomendados)
+- [ ] **Sin arrays hardcodeados en KeywordHighlight** — quotes y tags vienen de `overlay_ui` del segmento, no de `SEGMENT_QUOTES`/`SEGMENT_TAGS`
 - [ ] **Pilar editorial** — el episodio está clasificado dentro de uno de los 4 pilares de El Antídoto
 - [ ] **Tensión del debate** — la pieza deja clara la tesis de Leo y la fricción introducida por Lola
 - [ ] **Outro CTA** — `short_outro_cta` definido para shorts y visible en los últimos 5 segundos
 - [ ] **Fade-out final** — el audio cae progresivamente a 0 en los últimos 150 frames de `insight` y `atomic`
 - [ ] **Transición suave** — el outro entra con fade/crossfade y nunca con corte negro duro
 - [ ] **Voz de marca** — hooks, headlines, quotes y tags suenan a El Antídoto y no a contenido genérico de IA
-- [ ] **SEGMENT_QUOTES** — una quote curada por cada segmento (no copy-paste)
-- [ ] **SEGMENT_TAGS** — tags divertidos con emojis por cada segmento
-- [ ] **Sincronización** — reproducir y verificar que subtítulos van en sync con audio
-- [ ] **Sin errores TS** — `npx tsc --noEmit` sin errores en `Podcats-production/`
+- [ ] **Sincronización palabra** — reproducir y verificar que las palabras del subtítulo aparecen en sync con el audio (Modo A)
+- [ ] **Sin errores TS** — `npx tsc --noEmit 2>&1 | grep -v "Scanera\|smilebaby"` sin errores en módulos de podcast
 - [ ] **Preview OK** — verificar en `localhost:3000` que se ve correctamente
 
 ---

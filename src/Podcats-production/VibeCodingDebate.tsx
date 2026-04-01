@@ -12,6 +12,7 @@ import { currentPodcastEpisode } from "./currentEpisode";
 import { prepareSegments } from "./episode-schema";
 import { DebateSegment } from "./DebateSegment";
 import { HookBanner } from "./HookBanner";
+import { LogoCenterOverlay } from "./KeywordHighlight";
 import { OutroBanner } from "./OutroBanner";
 
 export const VibeCodingDebate: React.FC<{
@@ -118,6 +119,22 @@ export const VibeCodingDebate: React.FC<{
                 />
               </Sequence>
             ))}
+
+            {/* Logo overlay spans ALL consecutive logo-mode segments as one continuous Sequence */}
+            {(() => {
+              const logoSegs = segments.filter(
+                (s) => s.overlay_ui.center_mode === "logo",
+              );
+              if (logoSegs.length === 0) return null;
+              const logoFrom = logoSegs[0].startFrame;
+              const logoDuration =
+                logoSegs[logoSegs.length - 1].endFrame - logoFrom;
+              return (
+                <Sequence from={logoFrom} durationInFrames={logoDuration}>
+                  <LogoCenterOverlay durationFrames={logoDuration} />
+                </Sequence>
+              );
+            })()}
           </Sequence>
         </AbsoluteFill>
       </Sequence>

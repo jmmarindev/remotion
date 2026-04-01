@@ -1,8 +1,15 @@
+export interface WordTiming {
+  text: string;
+  start_time: number; // seconds absolute (relative to audio start)
+  end_time: number;
+}
+
 export interface TimelineSegment {
   start_time: string;
   end_time: string;
   speaker_id: number;
   text_content: string;
+  words?: WordTiming[];
   visual_strategy?: {
     asset_type: string;
     freepik_api_params: {
@@ -14,15 +21,18 @@ export interface TimelineSegment {
   };
   overlay_ui: {
     headline: string;
+    key_quote?: string;
+    fun_tags?: string[];
+    center_mode?: "logo" | "default";
   };
 }
 
 export interface DistributionTargets {
   linkedin_start: string;
-  linkedin_end: string;
+  linkedin_end?: string;
   linkedin_hook: string;
   tiktok_start: string;
-  tiktok_end: string;
+  tiktok_end?: string;
   tiktok_hook: string;
   short_outro_cta: string;
   short_outro_duration_seconds: number;
@@ -32,7 +42,7 @@ export interface PodcastEpisodeMetadata {
   episode_slug: string;
   episode_title: string;
   audio_file: string;
-  vibe_theme: string;
+  vibe_theme?: string;
   channel_name?: string;
   channel_tagline?: string;
   editorial_pillar?: string;
@@ -81,7 +91,7 @@ export function getEpisodeDurationInFrames(
   debateData: PodcastDebateData,
   fps: number = 30,
 ): number {
-  const lastSegment = debateData.timeline.at(-1);
+  const lastSegment = debateData.timeline[debateData.timeline.length - 1];
   if (!lastSegment) {
     return 0;
   }

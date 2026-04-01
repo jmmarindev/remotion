@@ -1,0 +1,18 @@
+{
+    "sourceFile": "scripts/parse-aaf.py",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1774975225482,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1774975225482,
+            "name": "Commit-0",
+            "content": "import aaf2\nimport os\n\nfilepath = os.path.expanduser(\n    \"/Users/juanmiguelmarinberbell/Documents/Development/remotion/\"\n    \"ElevenLabs_\\u00bfVelocidad_o_Calidad_El_Dilema_de_la_Innovaci\\u00f3n_Actual.aaf\"\n)\n\nprint(f\"Opening: {filepath}\")\nprint(f\"File exists: {os.path.exists(filepath)}\")\n\nwith aaf2.open(filepath, \"r\") as f:\n    all_mobs = list(f.content.mobs)\n    print(f\"\\nTotal mobs: {len(all_mobs)}\")\n\n    for i, mob in enumerate(all_mobs):\n        print(f\"\\n=== Mob {i}: {mob.__class__.__name__} | name={getattr(mob, 'name', '?')}\")\n        for slot in mob.slots:\n            print(f\"  Slot '{slot.name}' media_kind={slot.media_kind}\")\n            seg = slot.segment\n            seg_type = seg.__class__.__name__\n            seg_len = getattr(seg, 'length', '?')\n            print(f\"    Segment: {seg_type} length={seg_len}\")\n\n            if hasattr(seg, 'components'):\n                comps = list(seg.components)\n                print(f\"    Components: {len(comps)}\")\n                for j, c in enumerate(comps[:10]):\n                    ctype = c.__class__.__name__\n                    length = getattr(c, 'length', '?')\n                    start = getattr(c, 'start_time', '?')\n                    mob_ref = None\n                    if hasattr(c, 'mob'):\n                        try:\n                            mob_ref = c.mob.name\n                        except Exception:\n                            mob_ref = \"?\"\n                    print(f\"      [{j}] {ctype} len={length} start={start} ref={mob_ref}\")\n"
+        }
+    ]
+}
